@@ -1,0 +1,29 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block title %}
+    <title>User Profile</title>
+{% endblock title %}
+
+{% block content %}
+
+    <hr>
+
+    <img alt="Profile Image" name="image" id="image" src="{{profile_image_src}}">
+    <br>
+
+    <h1>Username:</h1>
+    <h3>{{username}}</h3>
+    <br>
+
+    {%  if is_self %}
+
+        <h2><a href="{% url 'update_profile_page' parameter_user_id=user_id %}">UPDATE PROFILE</a></h2>
+        <h2><a href="{% url 'password_change' %}">CHANGE PASSWORD</a></h2>
+        <br>
+    {% else %}
+    {% endif %}
+
+    <hr>
+
+{% endblock content %}
