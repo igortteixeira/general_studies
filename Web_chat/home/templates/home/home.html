@@ -11,6 +11,8 @@
     <h1>Welcome to The Home Page</h1>
     <br>
 
+    <a href="{% url 'search_users_page' %}">Search Users</a>
+
     {% if is_authenticated %}
         <a href="{% url 'logout_page' %}">Logout</a>
         <a href="{% url 'user_profile_page' parameter_user_id=user_id %}">Profile</a>

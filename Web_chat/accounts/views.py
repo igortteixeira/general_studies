@@ -27,13 +27,11 @@ def create_user_view(request):
                 profile_instance.save()
 
                 try:
-                    username = form.cleaned_data.get('username').lower()
+                    username = form.cleaned_data.get('username')
                     raw_password = form.cleaned_data.get('password1')
-                    account = authenticate(username=username, password=raw_password)
-                    login(request, account)
 
                     print("==========================================================")
-                    print("USER CREATED AND LOGGED!")
+                    print("USER CREATED!")
                     print(f"Username: {username}, Password:{raw_password}")
                     print("==========================================================")
                     return redirect('home_page')
