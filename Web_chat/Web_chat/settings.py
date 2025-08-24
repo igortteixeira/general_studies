@@ -21,7 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = ''
+SECRET_KEY = 'django-insecure-3j0ouvp@ks1o8#bfhe((*3zmng-dtvk2$vmlmvz40r!2+17u(j'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -81,9 +81,9 @@ WSGI_APPLICATION = 'Web_chat.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'database',
+        'NAME': 'webchatdb',
         'USER': 'postgres',
-        'PASSWORD': 'password',
+        'PASSWORD': 'loudsomething0',
         'HOST': 'localhost',
         'PORT': '5432'
     }
