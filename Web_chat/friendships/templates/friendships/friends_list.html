@@ -1,0 +1,51 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block title %}
+    <title>Friends List</title>
+{% endblock title %}
+
+
+{% block content %}
+
+
+    <h1>List of Friends</h1>
+
+
+    {% if empty_result %}
+
+        <br>
+        <br>
+        <br>
+        <br>
+
+        <h3>NO FRIENDS YET</h3>
+
+    {% else %}
+
+
+        <br>
+        <br>
+
+        <hr>
+
+        {% for friend in friends_list %}
+
+          <br>
+          <br>
+
+          <img alt="Profile Image" name="image" id="image" src="{{friend.profile_image_src}}">
+          <h3><a href="{% url 'user_profile_page' parameter_user_id=friend.id %}">{{friend.username}}</a></h3>
+          <h4><a href="{% url 'friend_chat_page' parameter_user_id=friend.id %}">CHAT</a></h4>
+
+        {% endfor %}
+
+        <hr>
+        
+        <br>
+        <br>
+
+    {% endif %}
+
+
+{% endblock content %}

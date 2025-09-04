@@ -1,0 +1,61 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block title %}
+    <title>User Profile</title>
+{% endblock title %}
+
+{% block content %}
+
+    <hr>
+
+    <img alt="Profile Image" name="image" id="image" src="{{profile_image_src}}">
+    <br>
+
+    <h1>Username:</h1>
+    <h3>{{username}}</h3>
+    <br>
+
+    {%  if is_self %}
+
+        <h2><a href="{% url 'update_profile_page' parameter_user_id=user_id %}">UPDATE PROFILE</a></h2>
+        <h2><a href="{% url 'password_change' %}">CHANGE PASSWORD</a></h2>
+        <br>
+    {% else %}
+
+
+        {%  if is_friend %}
+
+            <h2><a href="{% url 'remove_friend_page' parameter_user_id=user_id %}">Remove Friend</a></h2>
+            <h2><a href="{% url 'friend_chat_page' parameter_user_id=user_id %}">Chat</a></h2>
+
+
+        {% else %}
+
+            {%  if is_requesting_friend %}
+
+                <h2><a href="{% url 'accept_friend_request_page' parameter_user_id=user_id %}">Accept Friend Request</a></h2>
+                <h2><a href="{% url 'reject_friend_request_page' parameter_user_id=user_id %}">Reject Friend Request</a></h2>
+
+            {% else %}
+
+                {%  if is_requested_friend %}
+
+                    <h2><a href="{% url 'cancel_friend_request_page' parameter_user_id=user_id %}">Cancel Friend Request</a></h2>
+
+                {% else %}
+
+                    <h2><a href="{% url 'make_friend_request_page' parameter_user_id=user_id %}">Make Friend Resquest</a></h2>
+
+                {% endif %}
+
+            {% endif %}
+
+        {% endif %}
+
+
+    {% endif %}
+
+    <hr>
+
+{% endblock content %}

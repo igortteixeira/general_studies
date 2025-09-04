@@ -1,0 +1,44 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block title %}
+    <title>Chat with Friend</title>
+{% endblock title %}
+
+{% block content %}
+
+    <img alt="Profile Image" name="image" id="image" src="{{parameter_user_image_src}}">
+    <h2>Chat with {{parameter_user_username}}</h2>
+
+    <br>
+    <br>
+
+    <hr>
+
+
+    {% for message in messages  %}
+
+        <br>
+        <br>
+        <h3>{{message.body}}</h3>
+        <p>{{message.date_created}}</p>
+
+    {% endfor %}
+
+    <br>
+
+    <hr>
+
+    <br>
+    <br>
+    <br>
+
+
+    <form action="" method="POST">
+        {% csrf_token %}
+
+        <textarea name="body" id=body cols="80" rows="10" placeholder="Write your message..." required></textarea>
+        <button type="submit">Send</button>
+    </form>
+
+{% endblock content %}

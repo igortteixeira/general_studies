@@ -1,0 +1,49 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block title %}
+    <title>Friend Requests</title>
+{% endblock title %}
+
+
+{% block content %}
+
+
+    <h1>List of Friend Requests</h1>
+
+
+    {% if empty_result %}
+
+        <br>
+        <br>
+        <br>
+        <br>
+
+        <h3>NO FRIENDS Requests</h3>
+
+    {% else %}
+
+
+        <br>
+        <br>
+
+        <hr>
+
+        {% for requesting_user in requesting_users %}
+
+            <br>
+            <br>
+
+            <h3><a href="{% url 'user_profile_page' parameter_user_id=requesting_user.id %}">{{requesting_user.username}}</a> <a href="{% url 'accept_friend_request_page' parameter_user_id=requesting_user.id %}">accept</a>    |    <a href="{% url 'reject_friend_request_page' parameter_user_id=requesting_user.id %}">reject</a></h3>
+
+        {% endfor %}
+
+        <hr>
+        
+        <br>
+        <br>
+
+    {% endif %}
+
+
+{% endblock content %}

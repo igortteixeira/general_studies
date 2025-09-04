@@ -1,0 +1,27 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block title %}
+    <title>Home</title>
+{% endblock title %}
+
+{% block content %}
+
+
+    <h1>Welcome to The Home Page</h1>
+    <br>
+
+    <a href="{% url 'search_users_page' %}">Search Users</a>
+
+    {% if is_authenticated %}
+        <a href="{% url 'logout_page' %}">Logout</a>
+        <a href="{% url 'user_profile_page' parameter_user_id=user_id %}">Profile</a>
+        <a href="{% url 'friends_list_page' %}">Friends List</a>
+        <a href="{% url 'friend_requests_list_page' %}">Friend Requests</a>
+    {% else %}
+        <a href="{% url 'create_user_page' %}">Sign in</a>
+        <a href="{% url 'login_page' %}">Login</a>
+    {% endif %}
+
+
+{% endblock content %}

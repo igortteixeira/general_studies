@@ -1,0 +1,29 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+
+{% block title %}
+    <title>Reject Friend Request</title>
+{% endblock title %}
+
+{% block content %}
+
+
+    <hr> 
+
+    <img alt="Profile Image" name="image" id="image" src="{{parameter_user_image_src}}">
+    <h2>Reject {{parameter_user_username}} friend request?</h2>
+
+    <hr>
+    <br>
+    <br>
+
+
+
+    <form action="" method="POST">
+        {% csrf_token %}
+
+        <button type="submit">Confirm</button>
+    </form>
+
+{% endblock content %}
