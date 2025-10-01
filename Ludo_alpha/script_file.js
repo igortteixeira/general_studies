@@ -4,6 +4,7 @@ const ctx = canvas.getContext('2d');/* object for drawing */
 const SIZE = 720;
 const GRID = 15;
 const CELL = SIZE / GRID;
+const TOKEN_R = CELL * 0.32;
 
 const PLAYERS = [
   {id:0,name:'RED', color:'#ef4444', avatar:'', startIndex:0},
@@ -32,9 +33,9 @@ const HOME_PATH = {
 
 const BASE_SLOTS = {
   0:[[1.5,1.5],[3.5,1.5],[1.5,3.5],[3.5,3.5]],
-  1:[[11.5,1.5],[13.5,1.5],[11.5,3.5],[13.5,3.5]],
-  2:[[11.5,11.5],[13.5,11.5],[11.5,13.5],[13.5,13.5]],
-  3:[[1.5,11.5],[3.5,11.5],[1.5,13.5],[3.5,13.5]]
+  1:[[10.5,1.5],[12.5,1.5],[10.5,3.5],[12.5,3.5]],
+  2:[[10.5,10.5],[12.5,10.5],[10.5,12.5],[12.5,12.5]],
+  3:[[1.5,10.5],[3.5,10.5],[1.5,12.5],[3.5,12.5]]
 }
 
 
@@ -47,6 +48,16 @@ const SAFE = [50,11,24,37];
 function cellCenter(x,y)
 {
   return [x*CELL + CELL/2, y*CELL + CELL/2];
+}
+
+
+function newTokens(){
+  return [
+    {pos:'base',steps:0},
+    {pos:'base',steps:0},
+    {pos:'base',steps:0},
+    {pos:'base',steps:0}
+  ];
 }
 
 
@@ -72,10 +83,10 @@ function drawGrid(){
 //draw the squared houses of the player's 4 pieces
 function drawHomeQuads(){
   const quads = [
-    {x:0,y:0,w:6,h:6,color:'rgba(255,0,0,0.3)'},
-    {x:9,y:0,w:6,h:6,color:'rgba(0,0,0,0.3)'},
-    {x:9,y:9,w:6,h:6,color:'rgba(255,255,0,0.3)'},
-    {x:0,y:9,w:6,h:6,color:'rgba(139,69,19,0.3)'}
+    {x:0,y:0,w:6,h:6,color:'rgba(255,0,0)'},
+    {x:9,y:0,w:6,h:6,color:'rgba(0,0,0)'},
+    {x:9,y:9,w:6,h:6,color:'rgba(255,255,0)'},
+    {x:0,y:9,w:6,h:6,color:'rgba(139,69,19)'}
   ];
   for(const q of quads){
     ctx.fillStyle=q.color;
@@ -173,6 +184,65 @@ function drawHomePath(){
 
 
 
+function tokenScreenPos(p, idx){
+  const t = p.tokens[idx];
+  if(t.pos==='base'){
+   const slot=BASE_SLOTS[p.id][idx];
+   const [cx,cy]=cellCenter(slot[0],slot[1]);
+   return {x:cx,y:cy};
+  }
+
+  if(t.pos==='home'){
+    const [cx,cy]=cellCenter(7,7);
+    return {x:cx + (idx-1.5)*CELL*0.12, y:cy + (p.id-1.5)*CELL*0.12};
+  }
+
+  if(t.pos.type==='main'){
+    const [mx,my]=MAIN_PATH[t.pos.index];
+    const [cx,cy]=cellCenter(mx,my);
+    return {x:cx,y:cy};
+  }
+
+  if(t.pos.type==='home'){
+    const path = HOME_PATH[p.id];
+    const stepIdx = t.steps-1;
+    const [hx,hy]=path[stepIdx];
+    const [cx,cy]=cellCenter(hx,hy);
+    return {x:cx,y:cy};
+  }
+
+  return{x:SIZE/2,y:SIZE/2};
+}
+
+
+
+function drawTokens(){
+  for(const p of state.players){
+    for(let i=0;i<4;i++){
+      const pos = tokenScreenPos(p,i);
+      ctx.beginPath(); 
+      ctx.arc(pos.x,pos.y,TOKEN_R,0,Math.PI*2);
+      ctx.fillStyle=p.color;
+      ctx.fill();
+      ctx.lineWidth=3;
+      ctx.strokeStyle='#fff';
+      ctx.stroke();
+      ctx.fillStyle='rgba(255,255,255,0.95)';
+      ctx.beginPath();
+      ctx.arc(pos.x,pos.y,TOKEN_R*0.5,0,Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle='#0f172a';
+      ctx.font=`${Math.floor(TOKEN_R*0.7)}px sans-serif`;
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      ctx.fillText(String(i+1), pos.x, pos.y);
+    }
+  }
+}
+
+
+
+
 function draw(){
   ctx.clearRect(0,0,SIZE,SIZE);
   drawGrid();
@@ -181,6 +251,20 @@ function draw(){
   drawSafeTiles();
   drawEntryHighlights();
   drawHomePath();
+  drawTokens();
 }
 
-draw();
+
+let state = null;
+function newGame(){
+  state = {
+    players: PLAYERS.map(p => ({...p, tokens:newTokens(), finished:0})),
+    current:0,
+    dice:null,
+    rolled:false,
+    winner:null
+  };
+  draw();
+}
+
+newGame();
