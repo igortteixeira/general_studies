@@ -23,10 +23,10 @@ const MAIN_PATH = [
 
 
 const HOME_PATH = {
-  0:[[7,2],[7,3],[7,4],[7,5],[7,6],[7,7]],
-  1:[[12,7],[11,7],[10,7],[9,7],[8,7],[7,7]],
-  2:[[7,12],[7,11],[7,10],[7,9],[7,8],[7,7]],
-  3:[[2,7],[3,7],[4,7],[5,7],[6,7],[7,7]]
+  0:[[7,1],[7,2],[7,3],[7,4],[7,5]],
+  1:[[13,7],[12,7],[11,7],[10,7],[9,7]],
+  2:[[7,13],[7,12],[7,11],[7,10],[7,9]],
+  3:[[1,7],[2,7],[3,7],[4,7],[5,7]]
 };
 
 
@@ -72,10 +72,10 @@ function drawGrid(){
 //draw the squared houses of the player's 4 pieces
 function drawHomeQuads(){
   const quads = [
-    {x:0,y:0,w:6,h:6,color:'rgba(255,0,0)'},
-    {x:9,y:0,w:6,h:6,color:'rgba(0,0,0)'},
-    {x:9,y:9,w:6,h:6,color:'rgba(255,255,0)'},
-    {x:0,y:9,w:6,h:6,color:'rgba(139,69,19)'}
+    {x:0,y:0,w:6,h:6,color:'rgba(255,0,0,0.3)'},
+    {x:9,y:0,w:6,h:6,color:'rgba(0,0,0,0.3)'},
+    {x:9,y:9,w:6,h:6,color:'rgba(255,255,0,0.3)'},
+    {x:0,y:9,w:6,h:6,color:'rgba(139,69,19,0.3)'}
   ];
   for(const q of quads){
     ctx.fillStyle=q.color;
@@ -151,6 +151,27 @@ function drawEntryHighlights(){
 }}
 
 
+function drawHomePath(){
+  for(const p of PLAYERS){
+    const h = HOME_PATH[p.id];
+    for(const home_path of h){
+      const [x,y]=home_path;
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha=0.12;
+      const [cx,cy]=cellCenter(x,y);
+      ctx.beginPath();
+      ctx.arc(cx,cy,CELL*0.36,0,Math.PI*2);
+      ctx.fill();
+      ctx.globalAlpha=1;
+
+      ctx.font='10px sans-serif';
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      ctx.fillText("Home", cx, cy);
+    }
+}}
+
+
 
 function draw(){
   ctx.clearRect(0,0,SIZE,SIZE);
@@ -159,6 +180,7 @@ function draw(){
   drawMainPath();
   drawSafeTiles();
   drawEntryHighlights();
+  drawHomePath();
 }
 
 draw();
