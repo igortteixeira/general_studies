@@ -1,0 +1,41 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block title %}
+    <title>User Complaints</title>
+{% endblock title %}
+
+{% block content %}
+
+
+    <h1>Complaints created by the User</h1>
+
+    <br>
+
+
+    <!--Check if user has complaints-->
+    {% if GET_data.complaint_dicts.is_complaint == GET_data.defaults_dict.bool_states.yes %}
+
+        {% for complaint in GET_data.complaint_dicts.dicts %}
+
+            <br>
+
+            <hr>
+
+            <h3><a href="{% url 'read_complaint_page' parameter_complaint_id=complaint.id %}">{{complaint.title}}</a></h3>
+
+            <hr>
+
+        {% endfor %}
+
+        <br>
+        <br>
+
+    {% else %}
+
+        <h3>EMPTY RESULT</h3>
+
+    {% endif %}
+
+
+{% endblock content %}

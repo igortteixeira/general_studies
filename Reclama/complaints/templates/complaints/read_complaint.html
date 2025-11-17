@@ -1,0 +1,169 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block title %}
+    <title>Complaint Page</title>
+{% endblock title %}
+
+{% block content %}
+
+    <img alt="company_image" name="profile_image" src="{{GET_data.company_dict.profile_image_url}}" width="50" height="50">
+    <p>Company: {{GET_data.company_dict.name}}</p>
+
+    <br>
+
+    <img alt="author_image" name="profile_image" src="{{GET_data.author_dict.profile_image_url}}" width="50" height="50">
+    <p>Author: {{GET_data.author_dict.name}}</p>
+
+    <br>
+    <br>
+    <br>
+    <br>
+
+    <!--If complaint is active-->
+    {% if GET_data.complaint_dict.is_active == GET_data.defaults_dict.bool_states.yes %}
+
+        <p>Status: Open</p>
+
+    <!--If complaint is closed-->
+    {% else %}
+
+        <p>Status: Closed</p>
+
+        <!--If complaint was solved-->
+        {% if GET_data.complaint_dict.is_solved == GET_data.defaults_dict.bool_states.yes %}
+
+            <p>Avaliation: Was solved</p>
+
+        {% else %}
+
+            <p>Avaliation: Was not solved</p>
+
+        {% endif %}
+
+        <p>Score: {{GET_data.complaint_dict.score_type}}</p>
+
+    {% endif %}
+
+    <p>Date posted: {{GET_data.complaint_dict.date_created}}</p> 
+
+
+    <hr>
+
+    <h2>{{GET_data.complaint_dict.title}}</h2>
+
+    <br>
+    <br>
+
+    <p>{{GET_data.complaint_dict.body}}</p>
+
+    <hr>
+
+
+
+    <!--If complaint is active-->
+    {% if GET_data.complaint_dict.is_active == GET_data.defaults_dict.bool_states.yes %}
+
+        <!--If user is either the author or the company-->
+        {% if GET_data.user_dict.is_author == GET_data.defaults_dict.bool_states.yes 
+            or GET_data.user_dict.is_company == GET_data.defaults_dict.bool_states.yes %}
+
+            <!--If user is author-->
+            {% if GET_data.user_dict.is_author == GET_data.defaults_dict.bool_states.yes %}
+
+                <h2><a href="{% url 'update_complaint_page' parameter_complaint_id=GET_data.complaint_dict.id %}">UPDATE</a></h2>
+                <h2><a href="{% url 'close_complaint_page' parameter_complaint_id=GET_data.complaint_dict.id %}">CLOSE</a></h2>
+                <h2><a href="{% url 'delete_complaint_page' parameter_complaint_id=GET_data.complaint_dict.id %}">DELETE</a></h2>
+
+            {% else %}
+
+                <!--Perphas an option for the company to perform some action on the complaint-->
+
+            {% endif %}
+
+
+            <form action="{% url 'create_comment' parameter_complaint_id=GET_data.complaint_dict.id %}" method="POST">
+
+                {% csrf_token %}
+
+                <label for="create_comment_body">Comment:</label>
+                <textarea id="create_comment_body" name="body" cols="50" rows="50" placeholder="Write comment..." required></textarea>
+
+                <button type="submit">comment</button>
+
+            </form>
+
+        {% else %}
+
+            <!--What could other(anonymous or authenticated) users do, if the complaint is active? -->
+
+        {% endif %}
+
+    <!-- complaint is closed-->
+    {% else %}
+
+
+            <!--If user is author-->
+            {% if GET_data.user_dict.is_author == GET_data.defaults_dict.bool_states.yes %}
+
+                <h2><a href="{% url 'delete_complaint_page' parameter_complaint_id=GET_data.complaint_dict.id %}">DELETE</a></h2>
+
+            {% else %}
+
+                <!--What could companies/other users do on closed compaints?-->
+
+            {% endif %}
+
+
+    {% endif %}
+
+
+    <br>
+    <br>
+
+    <hr>
+
+    <!--If there are comments-->
+    {% if GET_data.comment_dicts.is_comment == GET_data.defaults_dict.bool_states.yes %}
+
+        {% for comment in GET_data.comment_dicts.dicts %}
+
+            <div id="comment_container">
+
+                <img alt="author_image" name="profile_image" src="{{comment.author.profile_image_url}}" width="50" height="50">
+                <p>Author: {{comment.author.name}}</p>
+
+                <p>{{comment.body}}</p>
+                <p>{{comment.date_created}}</p>
+
+            </div>
+
+
+            <br>
+            <br>
+
+        {% endfor %}
+
+        <br>
+        <br>
+
+    {% else %}
+
+        <h3>No comments yet</h3>
+
+    {% endif %}
+
+
+    <!--CSS and Javascript-->
+
+
+    <style type="text/css">
+
+    </style>
+
+    <script type="text/javascript">
+
+    </script>
+
+
+{% endblock content %}

@@ -1,0 +1,58 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block title %}
+    <title>Search Page</title>
+{% endblock title %}
+
+{% block content %}
+
+
+    <h1>Search for Companies or Posts</h1>
+
+    <br>
+
+
+    <form action="" method="GET">
+
+        <label for="parameter_search_string">Search Bar:</label>
+        <input id="parameter_search_string" name="parameter_search_string" type="text" placeholder="Search...">
+
+        <button type="submit">Search</button>
+
+    </form>
+
+
+    {% if GET_data.search_result_dicts.is_result == GET_data.defaults_dict.bool_states.yes %}
+
+        {% for result in GET_data.search_result_dicts.dicts %}
+
+            <br>
+
+            <hr>
+
+            {% if result.object_type == GET_data.defaults_dict.object_type.user %}
+
+                <h3><a href="{% url 'user_profile_page' parameter_user_id=result.id %}">{{result.name}} (Company)</a></h3>
+
+            {% else %}
+
+                <h3><a href="{% url 'read_complaint_page' parameter_complaint_id=result.id %}">{{result.name}} (Complaint)</a></h3>
+
+            {% endif %}
+
+            <hr>
+
+        {% endfor %}
+
+        <br>
+        <br>
+
+    {% else %}
+
+        <h3>EMPTY RESULT</h3>
+
+    {% endif %}
+
+
+{% endblock content %}

@@ -1,0 +1,29 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+
+{% block title %}
+    <title>Update Complaint</title>
+{% endblock title %}
+
+{% block content %}
+
+    <h3>Title: {{GET_data.complaint_dict.title}}</h3>
+
+    <br>
+    <br>
+
+    <hr>
+
+    <form action="" method="POST">
+
+        {% csrf_token %}
+
+        <label for="body">Body:</label>
+        <textarea id="body" name="body" cols="50" rows="50" value="{{GET_data.complaint_dict.title}}"></textarea>
+
+        <button type="submit">Update</button>
+
+    </form>
+
+{% endblock content %}

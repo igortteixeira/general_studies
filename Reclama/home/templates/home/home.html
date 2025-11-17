@@ -1,0 +1,29 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block title %}
+    <title>Home</title>
+{% endblock title %}
+
+{% block content %}
+
+    <h1>Welcome to The Home Page</h1>
+    <br>
+
+    <a href="{% url 'searching_page' %}">Search For Companies/Posts</a>
+
+    {% if GET_data.user_dict.is_authenticated == GET_data.defaults_dict.bool_states.yes %}
+
+        <a href="{% url 'logout_page' %}">Logout</a>
+        <a href="{% url 'user_complaint_list_page' %}">User Complaints</a>
+        <a href="{% url 'user_profile_page' parameter_user_id=GET_data.user_dict.id %}">Profile</a>
+
+    {% else %}
+
+        <a href="{% url 'create_user_page' %}">Sign in</a>
+        <a href="{% url 'login_page' %}">Login</a>
+
+    {% endif %}
+
+
+{% endblock content %}
