@@ -10,18 +10,19 @@
     <h1>Welcome to The Home Page</h1>
     <br>
 
-    <a href="{% url 'searching_page' %}">Search For Companies/Posts</a>
+    <h3><a href="{% url 'searching_page' %}">Search For Companies/Posts</a></h3>
 
-    {% if GET_data.user_dict.is_authenticated == GET_data.defaults_dict.bool_states.yes %}
+    {% if GET_data.user_dict.is_authenticated == GET_data.defaults_dict.bool_states_dict.yes %}
 
-        <a href="{% url 'logout_page' %}">Logout</a>
-        <a href="{% url 'user_complaint_list_page' %}">User Complaints</a>
-        <a href="{% url 'user_profile_page' parameter_user_id=GET_data.user_dict.id %}">Profile</a>
+        <h3><a href="{% url 'logout_page' %}">Logout</a></h3>
+        <h3><a href="{% url 'user_complaint_list_page' %}">User Complaints</a></h3>
+        <h3><a href="{% url 'user_favorite_list_page' %}">Favorites</a></h3>
+        <h3><a href="{% url 'user_profile_page' parameter_user_id=GET_data.user_dict.id %}">Profile</a></h3>
 
     {% else %}
 
-        <a href="{% url 'create_user_page' %}">Sign in</a>
-        <a href="{% url 'login_page' %}">Login</a>
+        <h3><a href="{% url 'choose_user_type_page' %}">Sign in</a></h3>
+        <h3><a href="{% url 'login_page' %}">Login</a></h3>
 
     {% endif %}
 

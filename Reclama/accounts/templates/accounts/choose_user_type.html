@@ -1,0 +1,31 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+
+{% block title %}
+    <title>Choose User Type</title>
+{% endblock title %}
+
+{% block content %}
+
+    <h1>Choose The Type of Your User: </h1>
+
+
+    <form action="" method="POST">
+
+        {% csrf_token %}
+
+        <label for="customer">Customer</label>
+        <input type="radio" id="customer" name="user_type" value="{{GET_data.defaults_dict.user_types_dict.customer}}">
+
+        <label for="company">Company</label>
+        <input type="radio" id="company" name="user_type" value="{{GET_data.defaults_dict.user_types_dict.company}}">
+
+        <br>
+        <br>
+        
+        <button type="submit">Proceed</button>
+
+    </form>
+
+{% endblock content %}

@@ -1,0 +1,6 @@
+<h1>Are you sure you want to logout, {{GET_data.user_dict.username}}?</h1>
+<form action="" method="POST">
+    {% csrf_token %}
+
+    <button type="submit">Yes, logout</button>
+</form>

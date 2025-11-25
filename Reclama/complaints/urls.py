@@ -15,6 +15,6 @@ path("read_complaint/<int:parameter_complaint_id>/",views.read_complaint_view,na
 path("close_complaint/<int:parameter_complaint_id>/",views.close_complaint_view,name='close_complaint_page'),
 
 #CRUD COMMENTS
-path("create_comment/<int:parameter_complaint_id>/",views.create_comment_view,name='create_complaint_page'),
+path("create_comment/<int:parameter_complaint_id>/",views.create_comment_view,name='create_comment_page'),
 path("update_comment/<int:parameter_comment_id>/",views.update_comment_view,name='update_comment_page'),
 ]

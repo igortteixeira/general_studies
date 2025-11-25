@@ -18,12 +18,15 @@
         <label for="parameter_search_string">Search Bar:</label>
         <input id="parameter_search_string" name="parameter_search_string" type="text" placeholder="Search...">
 
+        <br>
+        <br>
+
         <button type="submit">Search</button>
 
     </form>
 
 
-    {% if GET_data.search_result_dicts.is_result == GET_data.defaults_dict.bool_states.yes %}
+    {% if GET_data.search_result_dicts.is_result == GET_data.defaults_dict.bool_states_dict.yes %}
 
         {% for result in GET_data.search_result_dicts.dicts %}
 
@@ -31,7 +34,7 @@
 
             <hr>
 
-            {% if result.object_type == GET_data.defaults_dict.object_type.user %}
+            {% if result.object_type == GET_data.defaults_dict.object_types_dict.user %}
 
                 <h3><a href="{% url 'user_profile_page' parameter_user_id=result.id %}">{{result.name}} (Company)</a></h3>
 

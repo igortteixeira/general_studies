@@ -20,7 +20,10 @@
         {% csrf_token %}
 
         <label for="body">Body:</label>
-        <textarea id="body" name="body" cols="50" rows="50" value="{{GET_data.complaint_dict.title}}"></textarea>
+        <textarea id="body" name="body" cols="50" rows="10" value="{{GET_data.complaint_dict.body}}">{{GET_data.complaint_dict.body}}</textarea>
+
+        <br>
+        <br>
 
         <button type="submit">Update</button>
 

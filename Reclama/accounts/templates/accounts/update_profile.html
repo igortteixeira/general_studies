@@ -1,0 +1,76 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+
+{% block title %}
+    <title>Update Profile</title>
+{% endblock title %}
+
+{% block content %}
+
+
+    <img alt="profile_image" name="profile_image" src="{{GET_data.user_dict.profile_dict.profile_image_url}}" width="100" height="100">
+
+    {% if GET_data.user_dict.user_type == GET_data.defaults_dict.user_types_dict.customer %}
+
+        <form action="" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <label for="name">Name:</label>
+            <input type="text" name="name" id="name" value="{{GET_data.user_dict.profile_dict.name}}">
+
+            <br>
+            <br>
+
+            <label for="profile_image">Edit Profile Image:</label>
+            <input type="file" name="profile_image" id="profile_image">
+
+            <br>
+            <br>
+
+            <button type="submit">Update</button>
+        </form>
+
+    {% else %}
+
+        <form action="" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <label for="name">name:</label>
+            <input type="text" name="name" id="name" value="{{GET_data.user_dict.profile_dict.name}}">
+
+            <br>
+            <br> 
+
+
+            <label for="location">location:</label>
+            <input type="text" name="location" id="location" value="{{GET_data.user_dict.profile_dict.location}}">
+
+            <br>
+            <br> 
+
+
+            <label for="phone_number">phone_number:</label>
+            <input type="text" name="phone_number" id="phone_number" value="{{GET_data.user_dict.profile_dict.phone_number}}">
+
+            <br>
+            <br>
+
+            <label for="profile_image">Edit Profile Image:</label>
+            <input type="file" name="profile_image" id="profile_image">
+
+            <br>
+            <br>
+
+            <label for="description">Description:</label>
+            <textarea name="description" id=description cols="50" rows="50" value="{{GET_data.user_dict.profile_dict.description}}">{{GET_data.user_dict.profile_dict.description}}</textarea>
+
+            <br>
+            <br>
+
+            <button type="submit">Update</button>
+        </form>
+
+    {% endif %}
+
+{% endblock content %}

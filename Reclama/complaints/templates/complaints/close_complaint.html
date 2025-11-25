@@ -26,7 +26,7 @@
 
             {% for score_type_dict in GET_data.defaults_dict.score_types_dicts %}
 
-                <option value="{{score_type_dict.value}}">{{score_type_dict.readable}}</option>
+                <option value="{{score_type_dict.numeric_value}}">{{score_type_dict.readable_value}}</option>
 
             {% endfor %}
 
@@ -34,12 +34,14 @@
 
         <!-- radio button (yes or no)-->
 
-        <label for="yes">Solved</label><br>
-        <input type="radio" id="yes" name="is_solved" value="{{GET_data.defaults_dict.bool_states.yes}}">
-        
-        <label for="no">NOT Solved</label><br>
-        <input type="radio" id="no" name="is_solved" value="{{GET_data.defaults_dict.bool_states.no}}">
-        
+        <label for="yes">Solved</label>
+        <input type="radio" id="yes" name="is_solved" value="{{GET_data.defaults_dict.bool_states_dict.yes}}">
+
+        <label for="no">NOT Solved</label>
+        <input type="radio" id="no" name="is_solved" value="{{GET_data.defaults_dict.bool_states_dict.no}}">
+
+        <br>
+        <br>
 
         <button type="submit">Update</button>
 

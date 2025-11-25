@@ -6,8 +6,12 @@ import accounts.models as accountsmodels
 import complaints.forms as complaintsforms
 import complaints.models as complaintsmodels
 import defaults.models as defaultsmodels
+import home.models as homemodels
 
 #ENV_VARIABLES
+object_types_user = defaultsmodels.ObjectTypes.USER
+object_types_complaint = defaultsmodels.ObjectTypes.COMPLAINT
+object_types_dict = {'user':object_types_user,'complaint':object_types_complaint}
 user_types_company = defaultsmodels.UserTypes.COMPANY
 user_types_customer = defaultsmodels.UserTypes.CUSTOMER
 bool_states_yes = defaultsmodels.BoolStates.YES
@@ -16,13 +20,14 @@ bool_states_dict = {'yes':bool_states_yes,'no':bool_states_no}
 score_types_tuples_list = defaultsmodels.ScoreTypes.choices#because of "close complaint page"
 score_types_dicts = []
 
+
 #GETTING SCORETYPES CHOICES
 for score_type_tuple in score_types_tuples_list:
 
 
     score_types_dicts.append({
-        'value':score_type_tuple[0],
-        'readable':score_type_tuple[1]
+        'numeric_value':score_type_tuple[0],
+        'readable_value':score_type_tuple[1]
     })
 
 
@@ -107,14 +112,14 @@ def create_complaint_view(request,*args, **kwargs):
                     print(f"{complaint_title}_________Complaint created!")
                     print("==========================================================")
 
-                    return redirect('read_complaint',parameter_complaint_id=complaint_instance_id)
+                    return redirect('read_complaint_page',parameter_complaint_id=complaint_instance_id)
 
                 else:
                     print("==========================================================")
                     print("INVALID FORM!")
                     print("==========================================================")
 
-                    return redirect('create_complaint',parameter_company_id=parameter_company_id)
+                    return redirect('create_complaint_page',parameter_company_id=parameter_company_id)
 
             else:
                 return HttpResponse("INVALID PARAMETER: Company id")
@@ -132,11 +137,14 @@ def read_complaint_view(request, *args, **kwargs):
     sorted_comment_dicts = []
 
     request_user = request.user
+    path_name = request.resolver_match.view_name
 
     is_authenticated = bool_states_no
     is_author = bool_states_no
     is_company = bool_states_no
     is_comment = bool_states_no
+    is_favorite = bool_states_no
+    favorite_id = bool_states_no
 
     parameter_complaint_id = kwargs.get("parameter_complaint_id")
     complaint_object = complaintsmodels.ComplaintPost.objects.get(pk=parameter_complaint_id)
@@ -167,18 +175,38 @@ def read_complaint_view(request, *args, **kwargs):
             complaint_is_active = complaint_object.is_active
             complaint_is_solved = complaint_object.is_solved
             complaint_score_type = complaint_object.score_type
-            complaint_Score_type_readable = ""
+            complaint_score_type_readable_value = ""
 
 
 
-            #Maybe fix this loop. Maybe a "while loop" would better
+            #Convert score_type numeric value into readable
 
-            for score_type_tuple in score_types_tuples_list:
+            for score_types_dict in score_types_dicts:
 
-                if score_type_tuple[0] == complaint_score_type:
-                    complaint_Score_type_readable = score_type_tuple[1]
+                #check if the numeric_value of score_types_dict is the same as complaint's score type
+                if score_types_dict['numeric_value'] == complaint_score_type:
+
+                    complaint_score_type_readable_value = score_types_dict['readable_value']
+
                 else:
                     pass
+
+
+            #Check if complaint is favorite
+
+            #fix - must confirm single result
+            favorite_complaint_object = homemodels.Favorites.objects.filter(user=request_user,foreign_int=parameter_complaint_id,object_type=object_types_complaint)
+
+            if favorite_complaint_object:
+
+                #fix - must confirm single result
+                favorite_complaint_object = favorite_complaint_object[0]
+                is_favorite = bool_states_yes
+                favorite_id = favorite_complaint_object.pk
+
+            else:
+
+                is_favorite = bool_states_no
 
 
             #AUTHOR INFO
@@ -186,6 +214,15 @@ def read_complaint_view(request, *args, **kwargs):
             author_object = complaint_object.author
             author_id = complaint_object.pk
             author_user_type = author_object.user_type
+
+
+            #COMPANY INFO
+
+            company_object = complaint_object.company
+            company_id = company_object.pk
+            company_profile = accountsmodels.CompanyProfile.objects.get(user=company_object)
+            company_profile_image_url = company_profile.profile_image.url
+            company_name = company_profile.name
 
 
             #CHECK IF REQUEST USER IS EITHER AUTHOR/COMPANY OF THE COMPLAINT
@@ -206,30 +243,21 @@ def read_complaint_view(request, *args, **kwargs):
                     pass
 
 
-            #GET AUTHOR NAME
+            #GET AUTHOR INFO
 
             #check if author is a customer
-            if author_object_user_type == user_types_customer:
+            if author_user_type == user_types_customer:
 
                 author_profile = accountsmodels.CustomerProfile.objects.get(user=author_object)
-                author_name = author_profile.first_name + "_" + author_profile.last_name
 
             #author is a company
             else:
 
                 author_profile = accountsmodels.CompanyProfile.objects.get(user=author_object)
-                author_name = author_profile.name
 
+            author_name = author_profile.name
             author_profile_image_url = author_profile.profile_image.url
 
-
-            #COMPANY INFO
-
-            company_object = complaint_object.company
-            company_id = company_object.pk
-            company_profile = accountsmodels.CompanyProfile.objects.get(user=company_object)
-            company_profile_image_url = company_profile.profile_image.url
-            company_name = company_profile.name
 
 
             #COMMENTS
@@ -255,14 +283,14 @@ def read_complaint_view(request, *args, **kwargs):
                     if comment_author_user_type == user_types_customer:
 
                         comment_author_profile = accountsmodels.CustomerProfile.objects.get(user=comment_author)
-                        comment_author_name = author_profile.first_name + "_" + author_profile.last_name
 
                     #author is a company
                     else:
 
                         comment_author_profile = accountsmodels.CompanyProfile.objects.get(user=comment_author)
-                        comment_author_name = author_profile.name
 
+
+                    comment_author_name = comment_author_profile.name
                     comment_author_profile_image_url = comment_author_profile.profile_image.url
 
 
@@ -274,7 +302,7 @@ def read_complaint_view(request, *args, **kwargs):
                     })
 
                 #To sort comments by date_created
-                sorted_comment_dicts = sorted(comment_dicts, key=lambda x: x.date_created, reverse=False)
+                sorted_comment_dicts = sorted(comment_dicts, key=lambda x: x['date_created'], reverse=False)
 
             #No comments
             else:
@@ -288,13 +316,15 @@ def read_complaint_view(request, *args, **kwargs):
 
             company_dict = {'id':company_id,'name':company_name,'profile_image_url':company_profile_image_url}
 
-            complaint_dict = {'id':parameter_complaint_id,'title':complaint_title,'body':complaint_body,'score_type':complaint_score_type,'date_created':complaint_date_created,'is_active':complaint_is_active,'is_solved':complaint_is_solved}
+            complaint_dict = {'id':parameter_complaint_id,'title':complaint_title,'body':complaint_body,'score_type':complaint_score_type,'complaint_score_type_readable_value':complaint_score_type_readable_value,'date_created':complaint_date_created,'is_active':complaint_is_active,'is_solved':complaint_is_solved,'is_favorite':is_favorite,'favorite_id':favorite_id,'object_type':object_types_complaint}
 
             comment_dicts = {'is_comment':is_comment,'dicts':sorted_comment_dicts}
 
             user_dict = {'id':request_user_id,'is_author':is_author,'is_company':is_company,'is_authenticated':is_authenticated}
 
-            defaults_dict = {'bool_states_dict':bool_states_dict,'score_types_dicts':score_types_dicts}
+            defaults_dict = {'bool_states_dict':bool_states_dict,'score_types_dicts':score_types_dicts,'object_types_dict':object_types_dict}
+
+            page_dict = {'path_name':path_name}
 
 
             context['GET_data']={
@@ -303,7 +333,8 @@ def read_complaint_view(request, *args, **kwargs):
                 'complaint_dict':complaint_dict,
                 'user_dict':user_dict,
                 'comment_dicts':comment_dicts,
-                'defaults_dict':defaults_dict
+                'defaults_dict':defaults_dict,
+                'page_dict':page_dict
             }
 
 
@@ -352,7 +383,6 @@ def update_complaint_view(request,*args, **kwargs):
 
                         complaint_dict = {'id':parameter_complaint_id,'title':complaint_title,'body':complaint_body}
 
-
                         context['GET_data'] ={
                             'complaint_dict':complaint_dict
                         }
@@ -379,6 +409,7 @@ def update_complaint_view(request,*args, **kwargs):
             if complaint_object:
 
                 author_object = complaint_object.author
+                complaint_is_active = complaint_object.is_active
 
                 #check if both author and request users are the same person
                 if request_user == author_object:
@@ -392,13 +423,13 @@ def update_complaint_view(request,*args, **kwargs):
 
                             complaint_form.save()
 
-                            return redirect('read_complaint',parameter_complaint_id=parameter_complaint_id)
+                            return redirect('read_complaint_page',parameter_complaint_id=parameter_complaint_id)
 
                         else:
                             print("==========================================================")
                             print("INVALID FORM!")
                             print("==========================================================")
-                            return redirect('update_complaint',parameter_complaint_id=parameter_complaint_id)
+                            return redirect('update_complaint_page',parameter_complaint_id=parameter_complaint_id)
 
                     else:
                         return HttpResponse("DENIED: cannot update closed complaint")
@@ -529,7 +560,7 @@ def close_complaint_view(request,*args, **kwargs):
                         #GET_DATA
 
                         complaint_dict = {'id':parameter_complaint_id,'title':complaint_title}
-                        defaults_dict = {'score_types_dicts':score_types_dicts}
+                        defaults_dict = {'score_types_dicts':score_types_dicts,'bool_states_dict':bool_states_dict}
 
                         context['GET_data'] ={
                             'complaint_dict':complaint_dict,
@@ -578,14 +609,15 @@ def close_complaint_view(request,*args, **kwargs):
                             complaint_instance.is_active = bool_states_no
                             complaint_instance.save()
 
-                            return redirect('read_complaint',parameter_complaint_id=parameter_complaint_id)
+                            return redirect('read_complaint_page',parameter_complaint_id=parameter_complaint_id)
 
                         else:
+                            print(request.POST)
                             print("==========================================================")
                             print("INVALID FORM!")
                             print("==========================================================")
 
-                            return redirect('close_complaint',parameter_complaint_id=parameter_complaint_id)
+                            return redirect('close_complaint_page',parameter_complaint_id=parameter_complaint_id)
 
                     else:
                         return HttpResponse("DENIED: complaint is already closed")
@@ -629,7 +661,7 @@ def user_complaint_list_view(request):
 
                     complaint_dicts.append({'id':complaint_id,'title':complaint_title})
 
-                sorted_complaint_dicts = sorted(complaint_dicts, key=lambda x: x.title, reverse=False)
+                sorted_complaint_dicts = sorted(complaint_dicts, key=lambda x: x['title'], reverse=False)
 
             else:
                 #No complaints
@@ -639,7 +671,10 @@ def user_complaint_list_view(request):
             #GET_DATA
 
             complaint_dicts = {'is_complaint':is_complaint,'dicts':sorted_complaint_dicts}
+
             defaults_dict = {'bool_states_dict':bool_states_dict}
+
+            
 
             context['GET_data'] ={
                 'complaint_dicts':complaint_dicts,
@@ -663,7 +698,7 @@ def create_comment_view(request,*args, **kwargs):
     request_user = request.user
 
     parameter_complaint_id = kwargs.get("parameter_complaint_id")
-    complaint_object = complaintsmodels.ComplaintComment.objects.get(pk=parameter_complaint_id)
+    complaint_object = complaintsmodels.ComplaintPost.objects.get(pk=parameter_complaint_id)
 
     if request.method == 'POST':
 
@@ -706,7 +741,7 @@ def create_comment_view(request,*args, **kwargs):
                             print("INVALID FORM!")
                             print("==========================================================")
 
-                        return redirect('read_complaint',parameter_complaint_id=parameter_complaint_id)
+                        return redirect('read_complaint_page',parameter_complaint_id=parameter_complaint_id)
 
                     else:
                         return HttpResponse("DENIED: cannot create comment because complaint is already closed")
@@ -766,7 +801,7 @@ def update_comment_view(request,*args, **kwargs):
                             print("==========================================================")
 
 
-                        return redirect('read_complaint',parameter_complaint_id=complaint_object_id)
+                        return redirect('read_complaint_page',parameter_complaint_id=complaint_object_id)
 
                     else:
                         return HttpResponse("DENIED: cannot update comment because complaint is already closed")
@@ -778,3 +813,4 @@ def update_comment_view(request,*args, **kwargs):
             return HttpResponse("DENIED: user is not authenticated")
     else:
         return HttpResponse("INVALID REQUEST!")
+
