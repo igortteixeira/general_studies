@@ -3,277 +3,76 @@ from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.contrib.auth import logout
 
+#REST FRAMEWORK
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework.renderers import JSONRenderer
+from rest_framework.parsers import JSONParser
+
+#Personalized imports
 import accounts.models as accountsmodels
 import accounts.forms as accountsforms
 import defaults.models as defaultsmodels
-import home.models as homemodels
 
 
-#ENV_VARIABLES
-user_types_company = defaultsmodels.UserTypes.COMPANY
-user_types_customer = defaultsmodels.UserTypes.CUSTOMER
-bool_states_yes = defaultsmodels.BoolStates.YES
-bool_states_no = defaultsmodels.BoolStates.NO
-object_types_user = defaultsmodels.ObjectTypes.USER
-object_types_complaint = defaultsmodels.ObjectTypes.COMPLAINT
+#CONST_VARIABLES
 object_types_dict = {'user':object_types_user,'complaint':object_types_complaint}
 user_types_dict = {'customer':user_types_customer,'company':user_types_company}
-bool_states_dict = {'yes':bool_states_yes,'no':bool_states_no}
 
 
+@api_view(['POST','GET'])
+def create_customer_view(request):
 
-def choose_user_type_view(request):
-
-    context = {}
+    customer_dict = {}
     defaults_dict = {}
-
-    #variable "declaration/initialization"
-    '''
-    '''
-
-    request_user = request.user
 
     if request.method == 'GET':
 
-        #check if user is not already logged
-        if not request_user.is_authenticated:
+        #GET_data
 
+        defaults_dict = {'user_types_dict':user_types_dict}
 
-            #GET_DATA
+        GET_data={
+            'defaults_dict':defaults_dict,
+            'message':{'SUCCESS': 'Create Customer Page'}
 
-            defaults_dict = {'user_types_dict':user_types_dict}
+        }
 
+        #Converting response data into json
+        context = JSONRenderer().render(GET_data)
 
-            context['GET_data']={
-                'defaults_dict':defaults_dict
+        return Response(context,status=status.HTTP_200_OK)
+
+    else:
+
+        if request.method == 'POST':
+
+            #POST_data
+
+            request_data_converted = JSONParser().parse(request_data)
+            print(request_data_converted)
+
+            POST_data={
+                'customer_dict':request_data_converted,
+                'message':{'SUCCESS': 'Data Submitted!'}
             }
 
-            return render(request,'accounts/choose_user_type.html',context)
+            #Converting response data into json
+            context = JSONRenderer().render(POST_data)
 
+            return Response(context,status=status.HTTP_200_OK)
+        
         else:
-            return HttpResponse("DENIED: user is authenticated")
 
+            #RESPONSE_data
 
-    elif request.method == 'POST':
+            request_reponse={
+                'message':{'FAILED': 'Invalid request type'}
+            }
+            context = JSONRenderer().render(request_reponse)
 
-        #check if user is not already logged
-        if not request_user.is_authenticated:
-
-            user_type_form = accountsforms.ChooseUserTypeForm(request.POST)
-
-            #check if form is valid
-            if user_type_form.is_valid():
-
-                user_type = user_type_form.cleaned_data.get('user_type')
-
-                return redirect('create_user_page',user_type_choice=user_type)
-
-            else:
-                print("==========================================================")
-                print("INVALID FORM!")
-                print("==========================================================")
-
-                return redirect('choose_user_type_page')
-        else:
-            return HttpResponse("DENIED: user is authenticated already")
-    else:
-        return HttpResponse("INVALID REQUEST!")
-
-
-
-def create_user_view(request,*args, **kwargs):
-
-    context = {}
-    user_dict = {}
-    defaults_dict = {}
-
-    #variable "declaration/initialization"
-    '''
-    request_user_instance = None
-    username = None
-    user_type = None
-    profile_image = None
-    first_name = None
-    last_name = None
-    name = None
-    description = None
-    location = None
-    phone_number = None
-    profile_instance = None
-    '''
-
-    request_user = request.user
-
-    user_type_choice = kwargs.get("user_type_choice")
-
-    if request.method == 'GET':
-
-        #check if user type is valid
-        if user_type_choice == user_types_customer or user_type_choice == user_types_company:
-
-            #check if user is not already logged
-            if not request_user.is_authenticated:
-
-
-                #GET_DATA
-
-                user_dict = {'user_type_choice':user_type_choice}
-
-                defaults_dict = {'user_types_dict':user_types_dict}
-
-
-
-                context['GET_data']={
-                    'user_dict':user_dict,
-                    'defaults_dict':defaults_dict
-                }
-
-                return render(request,'accounts/create_user.html',context)
-
-            else:
-                return HttpResponse("DENIED: user is authenticated")
-        else:
-            return HttpResponse("INVALID PARAMETER: user type")
-
-    elif request.method == 'POST':
-
-        #check if user is not already logged
-        if not request_user.is_authenticated:
-
-            #check if user type is valid
-            if user_type_choice == user_types_customer or user_type_choice == user_types_company:
-
-                #check if user type is CUSTOMER
-                if user_type_choice == user_types_customer:
-
-                    user_form = accountsforms.CreateUserForm(request.POST)
-                    profile_form = accountsforms.CreateCustomerProfileForm(request.POST,request.FILES)
-
-                    #check if both user and profile forms are valid
-                    if user_form.is_valid() and profile_form.is_valid():
-
-                        request_user_instance = user_form.save(commit=False)
-
-                        request_user_instance.user_type = user_types_customer
-                        request_user_instance.save()
-
-                        username = request_user_instance.username
-                        user_type = request_user_instance.user_type
-
-                        profile_image = profile_form.cleaned_data.get('profile_image')
-                        profile_name = profile_form.cleaned_data.get('name')
-
-                        
-                        #CHECK FOR BLANK FIELDS
-
-                        if not profile_name:
-                            profile_name = 'Undefined Name'
-                        else:
-                            pass
-
-
-                        profile_instance = accountsmodels.CustomerProfile.objects.create(
-                            user=request_user_instance,
-                            name=profile_name,
-                            profile_image=profile_image
-                        )
-
-
-                        print("==========================================================")
-                        print(f"{user_type} created!")
-                        print({"username":username,"Name":profile_name})
-                        print("==========================================================")
-
-                    else:
-                        print("==========================================================")
-                        print("INVALID FORM!")
-                        print("==========================================================")
-
-                        return redirect('create_user_page',user_type_choice=user_type_choice)
-
-
-                #user type COMPANY
-                else:
-
-                    user_form = accountsforms.CreateUserForm(request.POST)
-                    profile_form = accountsforms.CreateCompanyProfileForm(request.POST,request.FILES)
-
-                    #check if both user and profile forms are valid
-                    if user_form.is_valid() and profile_form.is_valid():
-
-                        request_user_instance = user_form.save(commit=False)
-                        
-                        request_user_instance.user_type = user_types_company
-                        request_user_instance.save()
-
-                        #CHECK FOR BLANK FIELDS
-
-                        optional_company_fields = ('name')
-
-                        profile_image = profile_form.cleaned_data.get('profile_image')
-                        profile_name = profile_form.cleaned_data.get('name')
-                        profile_description = profile_form.cleaned_data.get('description')
-                        profile_location = profile_form.cleaned_data.get('location')
-                        profile_phone_number = profile_form.cleaned_data.get('phone_number')
-
-
-                        #CHECK FOR BLANK FIELDS (Maybe could improve it)
-
-                        if not profile_name:
-                            profile_name = 'Undefined Name'
-                        else:
-                            pass
-
-                        if not profile_description:
-                            profile_description = 'Undefined Description'
-                        else:
-                            pass
-
-                        if not profile_location:
-                            profile_location = 'Undefined Location'
-                        else:
-                            pass
-
-                        if not profile_phone_number:
-                            profile_phone_number = 'Undefined Phone Number'
-                        else:
-                            pass
-
-
-                        profile_instance = accountsmodels.CompanyProfile.objects.create(
-                            user=request_user_instance,
-                            name=profile_name,
-                            description=profile_description,
-                            location=profile_location,
-                            phone_number=profile_phone_number,
-                            profile_image=profile_image
-                        )
-                                                                                                                                                                                                
-                    else:
-                        print("==========================================================")
-                        print("INVALID FORM!")
-                        print("==========================================================")
-
-                        return redirect('create_user_page',user_type_choice=user_type_choice)
-
-                profile_instance.save()
-
-                username = request_user_instance.username
-                user_type = request_user_instance.user_type
-
-                print("==========================================================")
-                print(f"{user_type} created!")
-                print({"username":username,"name":profile_name})
-                print("==========================================================")
-
-                return redirect('login_page')
-
-            else:
-                return HttpResponse("INVALID PARAMETER: user type")
-        else:
-            return HttpResponse("DENIED: user is authenticated already")
-    else:
-        return HttpResponse("INVALID REQUEST!")
+            return Response(context,status=status.HTTP_400_BAD_REQUEST)
 
 
 
@@ -613,3 +412,303 @@ def update_profile_view(request, *args, **kwargs):
         return HttpResponse("INVALID REQUEST!")
 
 
+
+
+
+def users_list_view(request):
+
+    context = {}
+    user_dicts_list = []
+
+    is_user = bool_states_no
+
+    if request.method == 'GET':
+
+        user_objects = accountsmodels.CustomUser.objects.all()
+
+        if user_objects:
+
+            is_user = bool_states_yes
+
+            for user_object in user_objects:
+
+                user_object_id = user_object.pk
+                user_object_user_type = user_object.user_type
+
+                if user_object_user_type == user_types_customer:
+
+                    user_object_profile = accountsmodels.CustomerProfile.objects.get(user=user_object)
+
+                else:
+
+                    user_object_profile = accountsmodels.CompanyProfile.objects.get(user=user_object)
+
+                user_object_profile_name = user_object_profile.name
+                user_object_profile_image_url = user_object_profile.profile_image.url
+
+                profile_dict = {
+                    'name':user_object_profile_name,
+                    'profile_image_url':user_object_profile_image_url
+                }
+
+                user_dict = {
+                    'id':user_object_id,
+                    'user_type':user_object_user_type,
+                    'profile_dict':profile_dict
+                }
+
+                user_dicts_list.append(user_dict)
+
+        #No results
+        else:
+            is_user = bool_states_no
+
+        #GET_DATA
+
+        user_dicts = {'is_user':is_user,'dicts':user_dicts_list}
+
+        defaults_dict = {'bool_states_dict':bool_states_dict,'user_types_dict':user_types_dict}
+
+        
+
+        context['GET_data'] ={
+            'user_dicts':user_dicts,
+            'defaults_dict':defaults_dict
+        }
+
+
+        return render(request, "accounts/users_list.html",context)
+    else:
+        return HttpResponse("INVALID REQUEST!")
+
+
+
+def favorite_view(request,*args, **kwargs):
+
+    context = {}
+
+    request_user = request.user
+
+    parameter_object_type = kwargs.get("parameter_object_type")
+    parameter_object_id = kwargs.get("parameter_object_id")
+    parameter_path_name = kwargs.get("parameter_path_name")
+
+    if request.method == 'POST':
+
+        #check if user is logged
+        if request_user.is_authenticated:
+
+            #VALIDATE object_id
+
+            #check if object_type is valid
+            if parameter_object_type == object_types_complaint or parameter_object_type == object_types_user:
+
+                #check if it's a complaint post
+                if parameter_object_type == object_types_complaint:
+
+                    #fix - must confirm single result
+                    parameter_object = complaintsmodels.ComplaintPost.objects.filter(pk=parameter_object_id)
+
+
+                #check if it's company user
+                else:
+
+                    #fix - must confirm single result
+                    parameter_object = accountsmodels.CustomUser.objects.filter(pk=parameter_object_id,user_type=user_types_company)
+
+
+                #check if parameter object is valid
+                if parameter_object:
+
+                    #fix - must confirm single result
+                    parameter_object = parameter_object[0]
+
+                    #fix - must confirm single result
+                    favorite_object = homemodels.Favorites.objects.filter(pk=parameter_object_id)
+
+                    #Check if complaint is not already favorite
+                    if not favorite_object:
+
+                        favorite_instance = homemodels.Favorites.objects.create(
+                            user=request_user,
+                            foreign_int=parameter_object_id,
+                            object_type=parameter_object_type
+                        )
+
+                        favorite_instance.save()
+
+                        print("==========================================================")
+                        print("Added to Favorites!")
+                        print("==========================================================")
+
+
+                        #REDIRECT
+
+                        #if post request comes from a complaint page
+                        if parameter_path_name == 'read_complaint_page':
+
+                            return redirect('read_complaint_page',parameter_complaint_id=parameter_object_id)
+
+                        else:
+
+                            #if post request comes from a company page
+                            if parameter_path_name == 'user_profile_page':
+
+                                return redirect('user_profile_page', parameter_user_id=parameter_object_id)
+
+                            else:
+
+                                #if post request comes from user favorite list
+                                if parameter_path_name == 'user_favorite_list_page':
+
+                                    return redirect('user_favorite_list_page')
+
+                                else:
+
+                                    #just redirect to home page
+                                    return redirect('home_page')
+
+
+
+                    else:
+                        return HttpResponse("DENIED: already favorite")
+                else:
+                    return HttpResponse("INVALID PARAMETER: object id")
+            else:
+                return HttpResponse("INVALID PARAMETER: object type")
+        else:
+            return HttpResponse("DENIED: user is not authenticated")
+    else:
+        return HttpResponse("INVALID REQUEST!")
+
+
+
+def unfavorite_view(request,*args, **kwargs):
+
+    context = {}
+
+    request_user = request.user
+
+    parameter_favorite_id = kwargs.get("parameter_favorite_id")
+    parameter_redirect_name = kwargs.get("parameter_path_name")
+
+    if request.method == 'POST':
+
+        #check if user is logged
+        if request_user.is_authenticated:
+
+            #fix - must confirm single result
+            favorite_object = homemodels.Favorites.objects.filter(pk=parameter_favorite_id)
+
+            #check if favorite is valid
+            if favorite_object:
+
+                favorite_object = favorite_object[0]
+                favorite_object_foreign_int = favorite_object.foreign_int
+                favorite_object_user = favorite_object.user
+
+                #Check if both request user and favorite's user are the same person
+                if request_user == favorite_object_user:
+
+                    favorite_object.delete()
+
+                    print("==========================================================")
+                    print("Removed from favorites")
+                    print("==========================================================")
+
+                    #REDIRECT
+
+                    #if post request comes from a complaint page
+                    if parameter_redirect_name == 'read_complaint_page':
+
+                        return redirect('read_complaint_page',parameter_complaint_id=favorite_object_foreign_int)
+
+                    else:
+
+                        #if post request comes from a company page
+                        if parameter_redirect_name == 'user_profile_page':
+
+                            return redirect('user_profile_page', parameter_user_id=favorite_object_foreign_int)
+
+                        else:
+
+                            #if post request comes from user favorite list
+                            if parameter_redirect_name == 'user_favorite_list_page':
+
+                                return redirect('user_favorite_list_page')
+
+                            else:
+
+                                #just redirect to home page
+                                return redirect('home_page')
+
+                else:
+                    return HttpResponse("DENIED: cannot unfavorite other people favorites")
+            else:
+                return HttpResponse("INVALID PARAMETER: favorite id")
+        else:
+            return HttpResponse("DENIED: user is not authenticated")
+    else:
+        return HttpResponse("INVALID REQUEST!")
+
+
+
+def user_favorite_list_view(request):
+
+    context = {}
+    favorite_objects_list = []
+
+    path_name = request.resolver_match.view_name
+    request_user = request.user
+
+    is_result = bool_states_no
+
+    if request.method == 'GET':
+
+        #check if user is logged
+        if request_user.is_authenticated:
+
+            favorite_objects = homemodels.Favorites.objects.filter(user=request_user)
+
+            #check is results
+            if favorite_objects:
+
+                is_result = bool_states_yes
+
+                for result in favorite_objects:
+
+                    favorite_id = result.pk
+                    object_id = result.foreign_int
+                    object_type = result.object_type
+
+                    favorite_objects_list.append({'id':favorite_id,'object_id':object_id,'object_type':object_type})
+
+            #No results
+            else:
+                pass
+
+
+
+            #GET Data
+
+            favorite_dicts = {'is_result':is_result,'dicts':favorite_objects_list}
+
+            defaults_dict = {'object_types_dict':object_types_dict,'bool_states_dict':bool_states_dict}
+
+            page_dict = {'path_name':path_name}
+
+
+            context['GET_data']={
+
+                'favorite_dicts':favorite_dicts,
+                'defaults_dict':defaults_dict,
+                'page_dict':page_dict
+            }
+
+
+            return render(request, "home/user_favorite_list.html",context)
+
+        else:
+            return HttpResponse("DENIED: user is not authenticated")
+    else:
+        return HttpResponse("INVALID REQUEST!")

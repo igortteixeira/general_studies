@@ -11,6 +11,8 @@
     <br>
 
     <h3><a href="{% url 'searching_page' %}">Search For Companies/Posts</a></h3>
+    <h3><a href="{% url 'users_list_page' %}">All users</a></h3>
+    <h3><a href="{% url 'complaints_list_page' %}">All complaints</a></h3>
 
     {% if GET_data.user_dict.is_authenticated == GET_data.defaults_dict.bool_states_dict.yes %}
 

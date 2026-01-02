@@ -6,6 +6,8 @@ import accounts.views as views
 
 
 urlpatterns = [
+path("users_list/",views.users_list_view,name='users_list_page'),
+
 #user
 path("choose_user_type/",views.choose_user_type_view,name='choose_user_type_page'),
 path("create_user/<int:user_type_choice>/",views.create_user_view,name='create_user_page'),
@@ -13,6 +15,11 @@ path("create_user/<int:user_type_choice>/",views.create_user_view,name='create_u
 #Profile managment
 path("user_profile/<int:parameter_user_id>/",views.user_profile_view,name='user_profile_page'),
 path("update_profile/",views.update_profile_view,name='update_profile_page'),
+
+#favorites
+path("user_favorite_list/",views.user_favorite_list_view,name='user_favorite_list_page'),
+path("favorite/<int:parameter_object_type>/<int:parameter_object_id>/<str:parameter_path_name>",views.favorite_view,name='favorite_page'),
+path("unfavorite/<int:parameter_favorite_id>/<str:parameter_path_name>",views.unfavorite_view,name='unfavorite_page'),
 
 #Authentication
 path('login/', auth_views.LoginView.as_view(template_name='accounts/login.html'), name='login_page'),

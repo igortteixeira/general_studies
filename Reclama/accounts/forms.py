@@ -3,26 +3,21 @@ from django.contrib.auth.forms import UserCreationForm
 import accounts.models as accountsmodels
 
 
+class ChooseUserTypeForm(forms.Form):
+    user_type = serializers.PositiveSmallIntegerField()
 
 
-class ChooseUserTypeForm(forms.ModelForm):
-    class Meta:
-        model = accountsmodels.CustomUser
-        fields = ['user_type']
+class CreateUserForm(forms.Form):
+    #USER
+    username = serializers.CharField(max_length=30)
+    email = serializers.EmailField(max_length=60)
+    password1 = serializers.TextField()
+    password2  = serializers.TextField()
 
 
-class CreateUserForm(UserCreationForm):
+class CreateCustomerProfileForm(forms.Form):
 
-    class Meta:
-        model = accountsmodels.CustomUser
-        fields = ['username', 'password1', 'password2']
-
-
-class CreateCustomerProfileForm(forms.ModelForm):
-
-    class Meta:
-        model = accountsmodels.CustomerProfile
-        fields = ['name','profile_image']
+    name = models.CharField(max_length=60,blank=True,default='Undefined Name')
 
 
 class UpdateCustomerProfileForm(forms.ModelForm):
