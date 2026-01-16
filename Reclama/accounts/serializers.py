@@ -1,25 +1,29 @@
 from rest_framework import serializers
 
-import defaults.models as defaultsmodels
 import accounts.models as accountsmodels
 
 
 
-class CreateUserSerializer(serializers.ModelSerializer):
-    password2 = models.TextField(null=False, blank=False)
-
-    class Meta:
-        model = accountsmodels.UserAccount
-        fields = ['email', 'name', 'password', 'user_type']
-
-
-class CreateCustomerSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = accountsmodels.CustomerProfile
-        fields = ['user_Account','profile_image']
+class CreateUserAccountSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField()
+    password2 = serializers.CharField()
+    user_type = serializers.IntegerField()
 
 
-class CreateCompanySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = accountsmodels.CompanyProfile
-        fields = ['email', 'name', 'password', 'user_type','profile_image']
+class CreateCustomerSerializer(serializers.Serializer):
+    full_name = serializers.CharField(required=False, allow_blank=True)
+
+
+class CreateCompanySerializer(serializers.Serializer):
+    name = serializers.CharField(required=False, allow_blank=True)
+    description = serializers.CharField(required=False, allow_blank=True)
+    location = serializers.CharField(required=False, allow_blank=True)
+    phone_number = serializers.CharField(required=False, allow_blank=True)
+
+
+
+class CreateFavoriteSerializer(serializers.Serializer):
+    object_type = serializers.IntegerField()
+    object_id = serializers.IntegerField()
+    user_id = serializers.IntegerField()
