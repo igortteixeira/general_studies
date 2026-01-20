@@ -26,20 +26,18 @@ dict_user_types = {'customer':defaultsmodels.UserTypes.CUSTOMER,'company':defaul
 @api_view(['POST','GET'])
 def create_user_view(request):
 
+    dict_response = {}
     dict_error = {
         'value':False,
         'status':status.HTTP_200_OK,
         'description':"No error"
     }
 
-    #check request type and send appropriate response
     if request.method == 'GET' or request.method == 'POST':
 
         if request.method == 'GET':
 
-            dict_response = {
-                'message':"Create An Account"
-            }
+            dict_response['message'] = "Create an Account"
 
         #POST REQUEST
 
@@ -187,7 +185,7 @@ def create_user_view(request):
 
                 dict_error['value'] = True
                 dict_error['status'] = status.HTTP_400_BAD_REQUEST
-                dict_error['description'] = "Invalid User Request Data"
+                dict_error['description'] = "Invalid Request Data"
 
     #INVALID REQUEST
     else:
@@ -203,7 +201,7 @@ def create_user_view(request):
 
 
 @api_view(['GET'])
-def user_profile_view(request,id_parameter):
+def user_profile_view(request,user_id):
 
     dict_response = {}
     dict_user = {}
@@ -216,13 +214,14 @@ def user_profile_view(request,id_parameter):
 
     if request.method == 'GET':
 
-        user_id = id_parameter
+        #must use deserializer to confirm if parameter type is correct
+        parameter_user_id = id_user
 
-        if user_id:
+        if parameter_user_id:
 
-            user_account_object = accountsmodels.UserAccount.objects.filter(pk=user_id)
+            object_user_account = accountsmodels.UserAccount.objects.filter(pk=parameter_user_id)
 
-            if user_account_object:
+            if object_user_account:
 
                 user_account_object = user_account_object[0]
                 user_account_type = user_account_object.user_type
@@ -256,40 +255,44 @@ def user_profile_view(request,id_parameter):
                         'logo':company_object.logo.url
                     }
 
+                dict_response['dict_user'] = dict_user
+
 
             else:
 
                 dict_error['value'] = True
                 dict_error['status'] = status.HTTP_400_BAD_REQUEST
-                dict_error['description'] = "Invalid Request Parameters"
+                dict_error['description'] = "Invalid Request Data"
 
         else:
 
             dict_error['value'] = True
             dict_error['status'] = status.HTTP_400_BAD_REQUEST
-            dict_error['description'] = "Missing Parameters"
+            dict_error['description'] = "Invalid Request Parameters"
 
 
     #Invalid request
     else:
-
         dict_error['value'] = True
         dict_error['status'] = status.HTTP_400_BAD_REQUEST
         dict_error['description'] = "Invalid Request"
 
 
-    dict_response['dict_user']= dict_user
     dict_response['dict_error'] = dict_error
     return Response(dict_response,status=dict_error['status'])
 
 
 
-
 def favorite_view(request):
 
-    context = {}
+    dict_response = {}
+    dict_user = {}
 
-    request_user = c.user
+    dict_error = {
+        'value':False,
+        'status':status.HTTP_200_OK,
+        'description':"No error"
+    }
 
     if request.method == 'POST':
 

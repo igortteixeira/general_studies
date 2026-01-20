@@ -17,8 +17,8 @@ class ComplaintPost(models.Model):
     body = models.TextField()
     score_type = models.PositiveSmallIntegerField(choices=defaultsmodels.ScoreTypes.choices,default=defaultsmodels.ScoreTypes.OK)
 
-    is_active = models.PositiveSmallIntegerField(choices=defaultsmodels.BoolStates.choices,default=defaultsmodels.BoolStates.YES)
-    is_solved = models.PositiveSmallIntegerField(choices=defaultsmodels.BoolStates.choices,default=defaultsmodels.BoolStates.NO)
+    is_active = models.BooleanField(default=True)
+    is_solved = models.BooleanField(default=False)
 
     date_created = models.DateTimeField(default=timezone.now)
 

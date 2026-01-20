@@ -13,11 +13,6 @@ class ScoreTypes(models.IntegerChoices):
     GOOD = 2, 'good'
 
 
-class BoolStates(models.IntegerChoices):
-    NO = 0, 'no'
-    YES = 1, 'yes'
-
-
 class ObjectTypes(models.IntegerChoices):
     USER = 0, 'user'
     COMPLAINT = 1, 'complaint'
