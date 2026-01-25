@@ -1,149 +1,107 @@
+#Django Core
 from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 
+#REST FRAMEWORK
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+#from rest_framework.renderers import JSONRenderer
+#from rest_framework.parsers import JSONParser
+
+#Personalized imports
 import accounts.models as accountsmodels
 import complaints.models as complaintsmodels
-import home.models as homemodels
 import defaults.models as defaultsmodels
-
-
-#ENV_VARIABLES
-object_types_user = defaultsmodels.ObjectTypes.USER
-object_types_complaint = defaultsmodels.ObjectTypes.COMPLAINT
-user_types_company = defaultsmodels.UserTypes.COMPANY
-user_types_customer = defaultsmodels.UserTypes.CUSTOMER
-object_types_dict = {'user':object_types_user,'complaint':object_types_complaint}
-bool_states_yes = defaultsmodels.BoolStates.YES
-bool_states_no = defaultsmodels.BoolStates.NO
-bool_states_dict = {'yes':bool_states_yes,'no':bool_states_no}
-
-
-def home_view(request):
-    
-    context = {}
-
-    request_user = request.user
-
-    is_authenticated = bool_states_no
-
-    if request.method == 'GET':
-
-        #check if user is logged
-        if request_user.is_authenticated:
-
-            is_authenticated = bool_states_yes
-            request_user_id = request_user.pk
-
-        #user is not authenticated
-        else:
-            request_user_id = bool_states_no
+import home.models as homemodels
 
 
 
-        #GET_DATA
-
-        defaults_dict = {'bool_states_dict':bool_states_dict}
-
-        user_dict = {'id':request_user_id,'is_authenticated':is_authenticated}
+#CONST_VARIABLES
+dict_object_types = {'user':defaultsmodels.ObjectTypes.USER,'complaint':defaultsmodels.ObjectTypes.COMPLAINT}
+dict_user_types = {'customer':defaultsmodels.UserTypes.CUSTOMER,'company':defaultsmodels.UserTypes.COMPANY}
 
 
-        context['GET_data']={
-            'user_dict':user_dict,
-            'defaults_dict':defaults_dict
-        }
+@api_view(['GET'])
+def list_search_view(request,search_string):
 
+    dict_response = {}
 
-        return render(request,'home/home.html',context)
+    dict_error = {
+        'value':False,
+        'status':status.HTTP_200_OK,
+        'description':"No error"
+    }
 
-    else:
-        return HttpResponse("INVALID REQUEST!")
+    list_dict_search_result = []
+    sorted_list_dict_search_result = []
 
+    #must use deserializer to confirm if parameter type is correct
+    parameter_search_string = search_string
 
+    #if user passed some arguments
+    if parameter_search_string:
 
-def searching_view(request, *args, **kwargs):
+        list_object_user_account_company = accountsmodels.UserAccount.objects.filter(user_type=dict_user_types['company'],name__icontains=parameter_search_string)
 
-    if request.method == 'GET':
+        list_object_complaint = complaintsmodels.Complaint.objects.filter(title__icontains=parameter_search_string)
 
-        context = {}
-        filter_results = []
-        sorted_filter_results = []
+        #if there's company results
+        if list_object_user_account_company:
 
-        is_result = bool_states_no
+            for object_user_account_company in list_object_user_account_company:
 
-        parameter_search_string = request.GET.get("parameter_search_string")
+                object_company_profile = accountsmodels.Company.objects.filter(user_account=object_user_account_company)
 
-        #if user passed some arguments
-        if parameter_search_string:
+                dict_company = {
+                    'id':object_user_account_company.pk,
+                    'name':object_company_profile.name,
+                    'logo':object_profile.logo.url
+                }
 
-            company_results = accountsmodels.CompanyProfile.objects.filter(name__icontains=parameter_search_string)
-            complaint_results = complaintsmodels.ComplaintPost.objects.filter(title__icontains=parameter_search_string)
+                list_dict_search_result.append(dict_company)
 
-            #check if there's company or complaint results
-            if company_results or complaint_results:
-
-                is_result = bool_states_yes
-
-                #if there's company results
-                if company_results:
-
-                    for company in company_results:
-
-                        #company info
-
-                        company_object = company.user
-                        company_id = company_object.id
-                        company_name = company.name
-
-                        filter_results.append({'id':company_id,'name':company_name,'object_type':object_types_user})
-
-                #no company results
-                else:
-                    pass
-
-                #if there's complaint results
-                if complaint_results:
-
-                    for complaint in complaint_results:
-
-                        #complaint info
-
-                        complaint_id = complaint.pk
-                        complaint_title = complaint.title
-
-                        filter_results.append({'id':complaint_id,'name':complaint_title,'object_type':object_types_complaint})
-
-                #No complaint results
-                else:
-                    pass
-
-                sorted_filter_results = sorted(filter_results, key=lambda x: x['name'], reverse=False)
-
-            #No results
-            else:
-                pass
-
-        #No arguments
+        #no complaint results
         else:
             pass
 
+        #if there's complaint results
+        if list_object_complaint:
+
+            for object_complaint in list_object_complaint:
+
+                dict_complaint = {
+                    'id':object_complaint.pk,
+                    'name':object_company_profile.name
+                }
+
+                list_dict_search_result.append(dict_complaint)
+
+        #No complaint results
+        else:
+            pass
+
+        sorted_list_dict_search_result = sorted(list_dict_search_result, key=lambda x: x['name'], reverse=False)
+
+
+    #No arguments
+    else:
+        pass
+
         #GET Data
 
-        search_result_dicts = {'is_result':is_result,'dicts':sorted_filter_results}
+        if request.method == 'GET':
 
-        defaults_dict = {'object_types_dict':object_types_dict,'bool_states_dict':bool_states_dict}
+            dict_response['message'] = "Search List"
+            dict_response['list_dict_search_result'] = sorted_list_dict_search_result
 
+        else:
 
-        context['GET_data']={
-
-            'search_result_dicts':search_result_dicts,
-            'defaults_dict':defaults_dict
-        }
-
-        return render(request,'home/searching.html',context)
-
-    else:
-        return HttpResponse("INVALID REQUEST!")
+            dict_error['value'] = True
+            dict_error['status'] = status.HTTP_400_BAD_REQUEST
+            dict_error['description'] = "Invalid Request"
 
 
-
+    dict_response['dict_error'] = dict_error
+    return Response(dict_response,status=dict_error['status'])

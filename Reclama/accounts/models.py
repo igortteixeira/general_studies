@@ -31,8 +31,8 @@ class Company(models.Model):
     logo = models.ImageField(default='company.png', upload_to='profile_pics')
 
 
-class Favorites(models.Model):
-    user = models.ForeignKey(UserAccount,on_delete=models.CASCADE)
+class Favourite(models.Model):
+    user_account = models.ForeignKey(UserAccount,on_delete=models.CASCADE)
 
     object_id = models.IntegerField()
     object_type = models.PositiveSmallIntegerField(choices=defaultsmodels.ObjectTypes.choices)

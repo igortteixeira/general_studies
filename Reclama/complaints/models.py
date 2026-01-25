@@ -9,7 +9,7 @@ import complaints.models as complaintsmodels
 
 #Add more fields such as likes/dislikes, view_count
 #And perhaps a complaint shouldn't be deleted even if customer/company are to be deleted. Either or both
-class ComplaintPost(models.Model):
+class Complaint(models.Model):
     author = models.ForeignKey(accountsmodels.CustomUser,on_delete=models.CASCADE,related_name='author_related_name')
     company = models.ForeignKey(accountsmodels.CustomUser,on_delete=models.CASCADE,related_name='company_related_name')
 
@@ -26,7 +26,7 @@ class ComplaintPost(models.Model):
 #And perhaps a comment shouldn't be deleted even if customer/company are to be deleted. Either or both
 class ComplaintComment(models.Model):
     author = models.ForeignKey(accountsmodels.CustomUser,on_delete=models.CASCADE)
-    complaint_post = models.ForeignKey(complaintsmodels.ComplaintPost,on_delete=models.CASCADE)
+    complaint = models.ForeignKey(Complaint,on_delete=models.CASCADE)
 
     body = models.TextField()
 

@@ -1,19 +1,28 @@
+#Django Core
 from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 
+#REST FRAMEWORK
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+#from rest_framework.renderers import JSONRenderer
+#from rest_framework.parsers import JSONParser
+
+#Personalized imports
 import accounts.models as accountsmodels
 import complaints.forms as complaintsforms
 import complaints.models as complaintsmodels
 import defaults.models as defaultsmodels
-import home.models as homemodels
 
 #CONST_VARIABLES
 dict_object_types = {'user':defaultsmodels.ObjectTypes.USER,'complaint':defaultsmodels.ObjectTypes.COMPLAINT}
 dict_user_types = {'customer':defaultsmodels.UserTypes.CUSTOMER,'company':defaultsmodels.UserTypes.COMPANY}
 
 
-def create_complaint_view(request,company_id,requesting_user_id):
+@api_view(['POST','GET'])
+def create_complaint_view(request,user_id,company_id):
 
     dict_response = {}
 
@@ -25,92 +34,87 @@ def create_complaint_view(request,company_id,requesting_user_id):
 
     #must use deserialize to confirm if parameter type is correct
 
-    parameter_company_id = company_id
-    parameter_requesting_user_id = requesting_user_id
-    object_company_user = accountsmodels.UserAccount.objects.filter(pk=parameter_company_id,user_type=dict_user_types['company'])
-    object_requesting_user_account = accountsmodels.UserAccount.objects.filter(pk=parameter_requesting_user_id)
+    parameter_user_account_id = user_id
+    parameter_user_account_id_company = company_id
 
-    if object_company_user and object_requesting_user_account:
+    object_user_account = accountsmodels.UserAccount.objects.filter(pk=parameter_user_account_id)
 
-        object_company_user = object_company_user[0]
-        object_requesting_user_account = object_requesting_user_account[0]
-        object_company = accountsmodels.Company.objects.get(user_account=object_company_user)
+    object_user_account_company = accountsmodels.UserAccount.objects.filter(pk=parameter_user_account_id_company,user_type=dict_user_types['company'])
 
+    if object_user_account and object_user_account_company:
 
-        if object_requesting_user_account.user_type == dict_user_types['customer']:
+        object_user_account_company = object_user_account_company[0]
+        object_user_account = object_user_account[0]
 
-            object_requesting_user_profile = accountsmodels.Customer.objects.get(user_account=object_requesting_user_account)
-            object_requesting_user_profile_name = object_requesting_user_profile.full_name
-
-        else:
-
-            object_requesting_user_profile = accountsmodels.Company.objects.get(user_account=object_requesting_user_account)
-            object_requesting_user_profile_name = object_requesting_user_profile.name
+        object_company = accountsmodels.Company.objects.get(user_account=object_user_account_company)
 
 
+        if request.method == 'GET' or request.method == 'POST':
 
-        if request.method == 'GET':
+            if request.method == 'GET':
 
-            #COMPANY INFO
+                #COMPANY INFO
 
-            dict_company = {
-                "id":object_requesting_user_account.pk,
-                "name":object_company.name,
-                "logo":object_company.logo.url
-            }
+                dict_company = {
+                    "id":object_user_account_company.pk,
+                    "name":object_company.name,
+                    "logo":object_company.logo.url
+                }
 
-            dict_response['message'] = "Create Complaint Post"
-            dict_response['dict_company'] = dict_company
+                dict_response['message'] = f"Create Complaint to {dict_company['name']} Company"
+                dict_response['dict_company'] = dict_company
 
-
-        elif request.method == 'POST':
-
-            request_data = request.data
-
-
-            #DESERIALIZATION AND FORM VALIDATION
-
-            deserializer_complaint = accountsserializers.CreateComplaintSerializer(data=request_data)
-
-            if deserializer_complaint.is_valid():
-
-                deserialized_complaint = deserializer_complaint.validated_data
-                form_complaint = accountsforms.CreateComplaintForm(deserialized_complaint)
-
-                if form_complaint.is_valid():
-
-                    cleaned_form_complaint = {
-                        "title":form_complaint.cleaned_data.get('title'),
-                        "body":form_complaint.cleaned_data.get('body')
-                    }
-
-                    instance_complaint = complaintsmodels.ComplaintPost.objects.create(
-                        author=object_requesting_user_account,
-                        company=object_company_user,
-                        title=cleaned_form_complaint['title'],
-                        body=cleaned_form_complaint['body']
-                    )
-
-                    instance_complaint.save()
-                    
-                    dict_response['dict_complaint'] = {
-                        "author":object_requesting_user_profile_name,
-                        "company":object_company.name,
-                        "title":cleaned_form_complaint['title'],
-                        "body":cleaned_form_complaint['body']
-                    }
-
-
-                else:
-                    dict_error['value'] = True
-                    dict_error['status'] = status.HTTP_400_BAD_REQUEST
-                    dict_error['description'] = "Invalid Complaint Submitted Data"
 
             else:
 
-                dict_error['value'] = True
-                dict_error['status'] = status.HTTP_400_BAD_REQUEST
-                dict_error['description'] = "Invalid Complaint Request Data"
+                request_data = request.data
+
+
+                #DESERIALIZATION AND FORM VALIDATION
+
+                deserializer_complaint = accountsserializers.CreateComplaintSerializer(data=request_data)
+
+                if deserializer_complaint.is_valid():
+
+                    deserialized_complaint = deserializer_complaint.validated_data
+                    form_complaint = accountsforms.CreateComplaintForm(deserialized_complaint)
+
+                    if form_complaint.is_valid():
+
+                        cleaned_form_complaint = {
+                            "title":form_complaint.cleaned_data.get('title'),
+                            "body":form_complaint.cleaned_data.get('body')
+                        }
+
+                        instance_complaint = complaintsmodels.Complaint.objects.create(
+                            author=object_user_account,
+                            company=object_user_account_company,
+                            title=cleaned_form_complaint['title'],
+                            body=cleaned_form_complaint['body']
+                        )
+
+                        instance_complaint.save()
+
+                        dict_complaint = {
+                            'company':object_company['name'],
+                            'title':cleaned_form_complaint['title'],
+                            'body':cleaned_form_complaint['body']
+                        }
+
+                        dict_response['message'] = "Complaint Created"
+                        dict_response['dict_complaint'] = dict_complaint
+
+
+                    else:
+                        dict_error['value'] = True
+                        dict_error['status'] = status.HTTP_400_BAD_REQUEST
+                        dict_error['description'] = "Invalid Complaint Submitted Data"
+
+                else:
+
+                    dict_error['value'] = True
+                    dict_error['status'] = status.HTTP_400_BAD_REQUEST
+                    dict_error['description'] = "Invalid Complaint Request Data"
 
 
         #Invalid request
@@ -128,10 +132,12 @@ def create_complaint_view(request,company_id,requesting_user_id):
     return Response(dict_response,status=dict_error['status'])
 
 
-def read_complaint_view(request,complaint_id,requesting_user_id):
+@api_view(['GET'])
+def read_complaint_view(request,user_id,complaint_id):
 
     dict_response = {}
-    list_comments = []
+    sorted_list_dict_comment = []
+    list_dict_comment = []
 
     dict_error = {
         'value':False,
@@ -140,162 +146,160 @@ def read_complaint_view(request,complaint_id,requesting_user_id):
     }
 
     parameter_complaint_id = complaint_id
-    parameter_requesting_user_id = requesting_user_id
-    object_complaint = accountsmodels.ComplaintPost.objects.filter(pk=parameter_complaint_id)
-    object_requesting_user_account = accountsmodels.UserAccount.objects.filter(pk=parameter_requesting_user_id)
+    parameter_user_account_id = user_id
+    object_complaint = accountsmodels.Complaint.objects.filter(pk=parameter_complaint_id)
+    object_user_account = accountsmodels.UserAccount.objects.filter(pk=parameter_requesting_user_id)
 
     is_author = False
     is_company = False
-    are_comments = False
-    is_favorite = False
-    favorite_id = False
+    is_favourite = False
 
-    if object_complaint and object_requesting_user_account:
+    if object_complaint and object_user_account:
 
 
         object_complaint = object_complaint[0]
-        object_requesting_user_account = object_requesting_user_account[0]
-
-        if request.method == 'GET':
-
-            #Check if complaint is favorite
-
-            object_favorite_complaint = accountsmodels.Favorites.objects.filter(user=object_requesting_user_account,foreign_int=object_complaint.pk,object_type=dict_object_types['complaint'])
+        object_user_account = object_user_account[0]
 
 
-            if object_favorite_complaint:
+        #Check if complaint is favourite
 
-                is_favorite = True
-                object_favorite_complaint = object_favorite_complaint[0]
-
-            else:
-
-                pass
+        object_favourite = accountsmodels.Favourite.objects.filter(user_account=object_user_account,foreign_int=object_complaint.pk,object_type=dict_object_types['complaint'])
 
 
-            #COMPLAINT INFO
+        if object_favourite:
 
-            dict_complaint = {
-                "id":object_complaint.pk,
-                "title":object_complaint.title,
-                "body":object_complaint.body,
-                "date_created":object_complaint.date_created,
-                "is_active":object_complaint.is_active,
-                "is_solved":object_complaint.is_solved,
-                "is_favorite":is_favorite,
-                "score_type":object_complaint.score_type
-            }
+            is_favourite = True
+        else:
+
+            pass
 
 
-            #AUTHOR INFO
+        #COMPLAINT INFO
 
-            object_author_user_account = object_complaint.author
-
-
-            if object_author_user_account.user_type == dict_user_types['customer']:
-
-                object_author_profile = accountsmodels.Customer.objects.get(user_account=object_author_user_account)
-                name_author = object_author_profile.full_name
-                image_author = object_author_profile.profile_image.url
-
-            else:
-
-                object_author_profile = accountsmodels.Company.objects.get(user_account=object_author_user_account)
-                name_author = object_author_profile.name
-                image_author = object_author_profile.logo.url
+        dict_complaint = {
+            "id":object_complaint.pk,
+            "title":object_complaint.title,
+            "body":object_complaint.body,
+            "date_created":object_complaint.date_created,
+            "is_active":object_complaint.is_active,
+            "is_solved":object_complaint.is_solved,
+            "is_favourite":is_favourite,
+            "score_type":object_complaint.score_type
+        }
 
 
-            dict_author = {
-                "id":object_author.pk,
-                "name":name_author,
-                "image":image_author
-            }
+        #AUTHOR INFO
+
+        object_user_account_author = object_complaint.author
 
 
-            #COMPANY INFO
+        if object_user_account_author.user_type == dict_user_types['customer']:
 
-            object_company_user_account = object_complaint.company
-            object_company = accountsmodels.Company.objects.get(user_account=object_company_user_account)
+            object_profile_author = accountsmodels.Customer.objects.get(user_account=object_user_account_author)
+            name_author = object_profile_author.full_name
+            image_author = object_profile_author.profile_image.url
 
-            dict_company = {
-                "id":object_company_user_account.pk,
-                "name":object_company.name,
-                "logo":object_company.logo.url
-            }
+        else:
+
+            object_profile_author = accountsmodels.Company.objects.get(user_account=object_user_account_author)
+            name_author = object_profile_author.name
+            image_author = object_profile_author.logo.url
 
 
-            #CHECK IF REQUESTING USER IS EITHER AUTHOR/COMPANY OF THE COMPLAINT
+        dict_author = {
+            "id":object_user_account_author.pk,
+            "name":name_author,
+            "image":image_author
+        }
 
-            if object_requesting_user_account == object_author_user_account:
+
+        #COMPANY INFO
+
+        object_user_account_company = object_complaint.company
+        object_company = accountsmodels.Company.objects.get(user_account=object_company_user_account)
+
+        dict_company = {
+            "id":object_user_account_company.pk,
+            "name":object_company.name,
+            "logo":object_company.logo.url
+        }
+
+
+        #CHECK IF REQUESTING USER IS EITHER AUTHOR/COMPANY OF THE COMPLAINT
+
+        if object_user_account == object_user_account_author or object_user_account == object_company_user_account:
+
+            if object_user_account == object_user_account_author:
 
                 is_author = True
 
             else:
 
-                if object_requesting_user_account == object_company_user_account:
+                is_company = True
 
-                    is_company = True
+        #Just a regular user reading the complaint
+        else:
+            pass
 
-                #Just a regular user reading the complaint
+
+        #COMMENTS
+
+        list_object_comment = complaintsmodels.ComplaintComment.objects.filter(complaint=object_complaint)
+
+        #check for comments
+        if list_object_comment:
+
+            for object_comment in list_object_comment:
+
+                object_user_account_author_comment = object_comment.author
+
+                #check if author is a customer
+                if object_user_account_author_comment.user_type == dict_user_types['customer']:
+
+                    object_profile_author_comment = accountsmodels.Customer.objects.get(user_account=object_user_account_author_comment)
+
+                    name_author_comment = object_profile_author_comment.full_name
+                    image_author_comment = object_profile_author_comment.profile_image.url
+
                 else:
-                    pass
+
+                    object_profile_author_comment = accountsmodels.Company.objects.get(user_account=object_user_account_author_comment)
+
+                    name_author_comment = object_profile_author_comment.name
+                    image_author_comment = object_profile_author_comment.logo.url
 
 
-            #COMMENTS
+                dict_author_comment = {
+                    "id":object_user_account_author_comment.pk,
+                    "name":name_author_comment,
+                    "image":image_author_comment
+                }
 
-            objects_comment = complaintsmodels.ComplaintComment.objects.filter(complaint_post=object_complaint)
-
-            #check for comments
-            if objects_comment:
-
-                are_comments = True
-
-                for object_comment in objects_comment:
-
-                    object_author_user_account_comment = object_comment.author
-
-                    #check if author is a customer
-                    if object_author_user_account_comment.user_type == dict_user_types['customer']:
-
-                        object_profile_author_comment = accountsmodels.Customer.objects.get(user_account=object_author_user_account_comment)
-
-                        name_author_comment = object_profile_author_comment.full_name
-                        image_author_comment = object_profile_author_comment.profile_image.url
+                dict_comment = {
+                    'id':object_comment.pk,
+                    'body':object_comment.body,
+                    'date_created':object_comment.date_created,
+                    'dict_author':dict_author_comment
+                }
 
 
-                    else:
+                list_dict_comment.append(dict_comment)
 
-                        object_profile_author_comment = accountsmodels.Company.objects.get(user_account=object_profile_author_comment)
+            #To sort comments by date_created
+            sorted_list_dict_comment = {sorted(list_dict_comment, key=lambda x: x['date_created'], reverse=False)}
 
-                        name_author_comment = object_profile_author_comment.name
-                        image_author_comment = object_profile_author_comment.logo.url
-
-                    dict_author_comment = {
-                        "id":object_author_user_account_comment.pk,
-                        "name":name_author_comment,
-                        "image":image_author_comment
-                    }
+        #No comments
+        else:
+            pass
 
 
-                    list_comments.append({
-                        'id':object_comment.pk,
-                        'body':object_comment.body,
-                        'date_created':object_comment.date_created,
-                        'author':dict_author
-                    })
+        if request.method == "GET":
 
-                #To sort comments by date_created
-                dicts_comment = {sorted(list_comments, key=lambda x: x['date_created'], reverse=False)}
-
-            #No comments
-            else:
-                pass
-
-            dict_response['message'] = "Read Complaint Post"
+            dict_response['message'] = "Read Complaint"
             dict_response['dict_complaint'] = dict_complaint
             dict_response['dict_author'] = dict_author
             dict_response['dict_company'] = dict_company
-            dict_response['dicts_comment'] = dicts_comment
+            dict_response['list_dict_comment'] = sorted_list_dict_comment
 
 
         #Invalid request
@@ -313,7 +317,8 @@ def read_complaint_view(request,complaint_id,requesting_user_id):
     return Response(dict_response,status=dict_error['status'])
 
 
-def update_complaint_view(request,complaint_id,requesting_user_id):
+@api_view(['POST','GET'])
+def update_complaint_view(request,user_id,complaint_id):
 
     dict_response = {}
 
@@ -323,17 +328,18 @@ def update_complaint_view(request,complaint_id,requesting_user_id):
         'description':"No error"
     }
 
+
     parameter_complaint_id = complaint_id
-    parameter_requesting_user_id = requesting_user_id
+    parameter_user_account_id = user_id
+    object_complaint = accountsmodels.Complaint.objects.filter(pk=parameter_complaint_id)
+    object_user_account = accountsmodels.UserAccount.objects.filter(pk=parameter_requesting_user_id)
 
-    object_complaint = accountsmodels.ComplaintPost.objects.filter(pk=parameter_complaint_id)
-    object_requesting_user_account = accountsmodels.UserAccount.objects.filter(pk=parameter_requesting_user_id)
 
+    if object_complaint and object_user_account:
 
-    if object_complaint and object_requesting_user_account:
 
         object_complaint = object_complaint[0]
-        object_requesting_user_account = object_requesting_user_account[0]
+        object_user_account = object_user_account[0]
 
 
         #COMPLAINT INFO
@@ -348,26 +354,27 @@ def update_complaint_view(request,complaint_id,requesting_user_id):
             "score_type":object_complaint.score_type
         }
 
+
         #AUTHOR INFO
 
-        object_author_user_account = object_complaint.author
+        object_user_account_author = object_complaint.author
 
 
-        if object_author_user_account.user_type == dict_user_types['customer']:
+        if object_user_account_author.user_type == dict_user_types['customer']:
 
-            object_author_profile = accountsmodels.Customer.objects.get(user_account=object_author_user_account)
-            name_author = object_author_profile.full_name
-            image_author = object_author_profile.profile_image.url
+            object_profile_author = accountsmodels.Customer.objects.get(user_account=object_user_account_author)
+            name_author = object_profile_author.full_name
+            image_author = object_profile_author.profile_image.url
 
         else:
 
-            object_author_profile = accountsmodels.Company.objects.get(user_account=object_author_user_account)
-            name_author = object_author_profile.name
-            image_author = object_author_profile.logo.url
+            object_profile_author = accountsmodels.Company.objects.get(user_account=object_user_account_author)
+            name_author = object_profile_author.name
+            image_author = object_profile_author.logo.url
 
 
         dict_author = {
-            "id":object_author.pk,
+            "id":object_user_account_author.pk,
             "name":name_author,
             "image":image_author
         }
@@ -375,61 +382,62 @@ def update_complaint_view(request,complaint_id,requesting_user_id):
 
         #COMPANY INFO
 
-        object_company_user_account = object_complaint.company
+        object_user_account_company = object_complaint.company
         object_company = accountsmodels.Company.objects.get(user_account=object_company_user_account)
 
         dict_company = {
-            "id":object_company_user_account.pk,
+            "id":object_user_account_company.pk,
             "name":object_company.name,
             "logo":object_company.logo.url
         }
 
 
-        #check if both author and request users are the same person
-        if object_requesting_user_account == object_author_user_account:
-
+        #check if both author and user are the same person
+        if object_user_account == object_user_account_author:
 
             #check if complaint is open
             if dict_complaint['is_active'] == True:
 
-                if request.method == 'GET':
+                if request.method == 'GET' or request.method == 'POST':
 
-                    dict_response['message'] = "Update Complaint Post"
-                    dict_response['dict_complaint'] = dict_complaint
-                    dict_response['dict_author'] = dict_author
-                    dict_response['dict_company'] = dict_company
+                    if request.method == 'GET':
 
-                elif request.method == 'POST':
+                        dict_response['message'] = "Update Complaint"
+                        dict_response['dict_complaint'] = dict_complaint
+                        dict_response['dict_author'] = dict_author
+                        dict_response['dict_company'] = dict_company
 
-                    request_data = request.data
+                    else:
+
+                        request_data = request.data
 
 
-                    #DESERIALIZATION AND FORM VALIDATION
+                        #DESERIALIZATION AND FORM VALIDATION
 
-                    deserializer_complaint = accountsserializers.UpdateComplaintSerializer(data=request_data)
+                        deserializer_complaint = accountsserializers.UpdateComplaintSerializer(data=request_data)
 
-                    if deserializer_complaint.is_valid():
+                        if deserializer_complaint.is_valid():
 
-                        deserialized_complaint = deserializer_complaint.validated_data
-                        form_complaint = accountsforms.UpdateComplaintForm(deserialized_complaint,instance=object_complaint)
+                            deserialized_complaint = deserializer_complaint.validated_data
+                            form_complaint = accountsforms.UpdateComplaintForm(deserialized_complaint,instance=object_complaint)
 
-                        if form_complaint.is_valid():
+                            if form_complaint.is_valid():
 
-                            form_complaint.save()
-                            dict_response['message'] = "Complaint Post Updated!"
+                                form_complaint.save()
+                                dict_response['message'] = "Complaint Updated!"
+
+                            else:
+
+                                dict_error['value'] = True
+                                dict_error['status'] = status.HTTP_400_BAD_REQUEST
+                                dict_error['description'] = "Invalid Request Data"
+
 
                         else:
 
                             dict_error['value'] = True
                             dict_error['status'] = status.HTTP_400_BAD_REQUEST
                             dict_error['description'] = "Invalid Request Data"
-
-
-                    else:
-
-                        dict_error['value'] = True
-                        dict_error['status'] = status.HTTP_400_BAD_REQUEST
-                        dict_error['description'] = "Invalid Request Data"
 
 
                 #INVALID REQUEST
@@ -461,7 +469,8 @@ def update_complaint_view(request,complaint_id,requesting_user_id):
     return Response(dict_response,status=dict_error['status'])
 
 
-def close_complaint_view(request,complaint_id,requesting_user_id):
+@api_view(['POST','GET'])
+def close_complaint_view(request,user_id,complaint_id):
 
     dict_response = {}
 
@@ -471,17 +480,18 @@ def close_complaint_view(request,complaint_id,requesting_user_id):
         'description':"No error"
     }
 
+
     parameter_complaint_id = complaint_id
-    parameter_requesting_user_id = requesting_user_id
+    parameter_user_account_id = user_id
+    object_complaint = accountsmodels.Complaint.objects.filter(pk=parameter_complaint_id)
+    object_user_account = accountsmodels.UserAccount.objects.filter(pk=parameter_requesting_user_id)
 
-    object_complaint = accountsmodels.ComplaintPost.objects.filter(pk=parameter_complaint_id)
-    object_requesting_user_account = accountsmodels.UserAccount.objects.filter(pk=parameter_requesting_user_id)
 
+    if object_complaint and object_user_account:
 
-    if object_complaint and object_requesting_user_account:
 
         object_complaint = object_complaint[0]
-        object_requesting_user_account = object_requesting_user_account[0]
+        object_user_account = object_user_account[0]
 
 
         #COMPLAINT INFO
@@ -496,26 +506,27 @@ def close_complaint_view(request,complaint_id,requesting_user_id):
             "score_type":object_complaint.score_type
         }
 
+
         #AUTHOR INFO
 
-        object_author_user_account = object_complaint.author
+        object_user_account_author = object_complaint.author
 
 
-        if object_author_user_account.user_type == dict_user_types['customer']:
+        if object_user_account_author.user_type == dict_user_types['customer']:
 
-            object_author_profile = accountsmodels.Customer.objects.get(user_account=object_author_user_account)
-            name_author = object_author_profile.full_name
-            image_author = object_author_profile.profile_image.url
+            object_profile_author = accountsmodels.Customer.objects.get(user_account=object_user_account_author)
+            name_author = object_profile_author.full_name
+            image_author = object_profile_author.profile_image.url
 
         else:
 
-            object_author_profile = accountsmodels.Company.objects.get(user_account=object_author_user_account)
-            name_author = object_author_profile.name
-            image_author = object_author_profile.logo.url
+            object_profile_author = accountsmodels.Company.objects.get(user_account=object_user_account_author)
+            name_author = object_profile_author.name
+            image_author = object_profile_author.logo.url
 
 
         dict_author = {
-            "id":object_author.pk,
+            "id":object_user_account_author.pk,
             "name":name_author,
             "image":image_author
         }
@@ -523,67 +534,67 @@ def close_complaint_view(request,complaint_id,requesting_user_id):
 
         #COMPANY INFO
 
-        object_company_user_account = object_complaint.company
+        object_user_account_company = object_complaint.company
         object_company = accountsmodels.Company.objects.get(user_account=object_company_user_account)
 
         dict_company = {
-            "id":object_company_user_account.pk,
+            "id":object_user_account_company.pk,
             "name":object_company.name,
             "logo":object_company.logo.url
         }
 
+        #check if both author and user are the same person
+        if object_user_account == object_user_account_author:
 
-        #check if both author and request users are the same person
-        if object_requesting_user_account == object_author_user_account:
-
+            #check if complaint is open
             if dict_complaint['is_active'] == True:
-            
 
-                if request.method == 'GET':
+                if request.method == 'GET' or request.method == 'POST':
 
-                    dict_response['message'] = "Close Complaint Post"
-                    dict_response['dict_complaint'] = dict_complaint
-                    dict_response['dict_author'] = dict_author
-                    dict_response['dict_company'] = dict_company
-                    dict_response['dict_comments'] = dict_comments
+                    if request.method == 'GET':
 
-
-                elif request.method == 'POST':
+                        dict_response['message'] = "Close Complaint"
+                        dict_response['dict_complaint'] = dict_complaint
+                        dict_response['dict_author'] = dict_author
+                        dict_response['dict_company'] = dict_company
 
 
-                    request_data = request.data
+                    else:
 
 
-                    #DESERIALIZATION AND FORM VALIDATION
+                        request_data = request.data
 
-                    deserializer_complaint = accountsserializers.UpdateComplaintSerializer(data=request_data)
 
-                    if deserializer_complaint.is_valid():
+                        #DESERIALIZATION AND FORM VALIDATION
 
-                        deserialized_complaint = deserializer_complaint.validated_data
-                        form_complaint = accountsforms.UpdateComplaintForm(deserialized_complaint,instance=object_complaint)
+                        deserializer_complaint = accountsserializers.CloseComplaintSerializer(data=request_data)
 
-                        if form_complaint.is_valid():
+                        if deserializer_complaint.is_valid():
 
-                            #Save complaint instance by updating is_ative field
-                            instance_complaint = form_complaint.save(commit=False)
-                            instance_complaint.is_active = False
+                            deserialized_complaint = deserializer_complaint.validated_data
+                            form_complaint = accountsforms.CloseComplaintForm(deserialized_complaint,instance=object_complaint)
 
-                            form_complaint.save()
-                            dict_response['message'] = "Complaint Post Closed!"
+                            if form_complaint.is_valid():
+
+                                #Save complaint instance by updating is_active field
+                                instance_complaint = form_complaint.save(commit=False)
+                                instance_complaint.is_active = False
+
+                                form_complaint.save()
+                                dict_response['message'] = "Complaint Closed!"
+
+                            else:
+
+                                dict_error['value'] = True
+                                dict_error['status'] = status.HTTP_400_BAD_REQUEST
+                                dict_error['description'] = "Invalid Request Data"
+
 
                         else:
 
                             dict_error['value'] = True
                             dict_error['status'] = status.HTTP_400_BAD_REQUEST
                             dict_error['description'] = "Invalid Request Data"
-
-
-                    else:
-
-                        dict_error['value'] = True
-                        dict_error['status'] = status.HTTP_400_BAD_REQUEST
-                        dict_error['description'] = "Invalid Request Data"
 
                 else:
                     dict_error['value'] = True
@@ -611,10 +622,12 @@ def close_complaint_view(request,complaint_id,requesting_user_id):
     return Response(dict_response,status=dict_error['status'])
 
 
-def user_complaint_list_view(request,requesting_user_id):
+@api_view(['GET'])
+def list_complaint_user_view(request,user_id):
 
     dict_response = {}
-    sorted_dicts_complaint = {}
+    list_dict_complaint = []
+    sorted_list_dict_complaint = []
 
     dict_error = {
         'value':False,
@@ -622,45 +635,43 @@ def user_complaint_list_view(request,requesting_user_id):
         'description':"No error"
     }
 
-    parameter_requesting_user_id = requesting_user_id
-    object_requesting_user_account = accountsmodels.UserAccount.objects.filter(pk=parameter_requesting_user_id)
+    parameter_user_account_id = user_id
+    object_user_account = accountsmodels.UserAccount.objects.filter(pk=parameter_requesting_user_id)
 
 
-    if object_requesting_user_account:
+    if object_user_account:
 
-        object_requesting_user_account = object_requesting_user_account[0]
+        object_user_account = object_user_account[0]
+        list_object_complaint = complaintsmodels.Complaint.objects.filter(author=object_user_account)
+
+        #check if user has created complaints
+        if list_object_complaint:
+
+            for object_complaint in list_object_complaint:
+
+                dict_complaint = {
+                    "id":object_complaint.pk,
+                    "title":object_complaint.title,
+                    "body":object_complaint.body,
+                    "date_created":object_complaint.date_created,
+                    "is_active":object_complaint.is_active,
+                    "is_solved":object_complaint.is_solved,
+                    "score_type":object_complaint.score_type
+                }
+
+                list_dict_complaint.append(dict_complaint)
+
+            sorted_list_dict_complaint = sorted(list_dict_complaint, key=lambda x: x['title'], reverse=False)
+
+        else:
+            #no complaints
+            pass
 
         if request.method == 'GET':
 
-                objects_complaint = complaintsmodels.ComplaintPost.objects.filter(author=object_requesting_user_account)
+            dict_response['message'] = "User Complaints"
+            dict_response['list_dict_complaint'] = sorted_list_dict_complaint
 
-                #check if user has created complaints
-                if objects_complaint:
-
-                    for object_complaint in objects_complaint:
-
-                        dict_complaint = {
-                            "id":object_complaint.pk,
-                            "title":object_complaint.title,
-                            "body":object_complaint.body,
-                            "date_created":object_complaint.date_created,
-                            "is_active":object_complaint.is_active,
-                            "is_solved":object_complaint.is_solved,
-                            "score_type":object_complaint.score_type
-                        }
-
-                        dicts_complaint.append(dict_complaint)
-
-                    sorted_dicts_complaint = sorted(dicts_complaint, key=lambda x: x['title'], reverse=False)
-
-                else:
-                    #no complaints
-                    pass
-
-                dict_response['message'] = "User Complaint Posts"
-                dict_response['dicts_complaint'] = sorted_dicts_complaint
-
-        
         else:
             dict_error['value'] = True
             dict_error['status'] = status.HTTP_400_BAD_REQUEST
@@ -674,7 +685,8 @@ def user_complaint_list_view(request,requesting_user_id):
     return Response(dict_response,status=dict_error['status'])
 
 
-def create_comment_view(request,complaint_id,requesting_user_id):
+@api_view(['GET'])
+def list_complaint_view(request):
 
     dict_response = {}
 
@@ -684,17 +696,77 @@ def create_comment_view(request,complaint_id,requesting_user_id):
         'description':"No error"
     }
 
+    list_dict_complaint = []
+    sorted_list_dict_complaint = []
+
+    list_object_complaint = complaintsmodels.Complaint.objects.all()
+
+
+    #check if there are complaints
+    if list_object_complaint:
+
+        for object_complaint in list_object_complaint:
+
+            dict_complaint = {
+                "id":object_complaint.pk,
+                "title":object_complaint.title,
+                "body":object_complaint.body,
+                "date_created":object_complaint.date_created,
+                "is_active":object_complaint.is_active,
+                "is_solved":object_complaint.is_solved,
+                "score_type":object_complaint.score_type
+            }
+
+            list_dict_complaint.append(dict_complaint)
+
+
+        sorted_list_dict_complaint = sorted(list_dict_complaint, key=lambda x: x['title'], reverse=False)
+
+    else:
+
+        #No complaints
+        pass
+
+
+    if request.method == 'GET':
+
+        dict_response['message'] = "All Complaints"
+        dict_response['sorted_list_dict_complaint'] = sorted_list_dict_complaint
+
+    else:
+        dict_error['value'] = True
+        dict_error['status'] = status.HTTP_400_BAD_REQUEST
+        dict_error['description'] = "Invalid Request"
+    
+    dict_response['dict_error'] = dict_error
+    return Response(dict_response,status=dict_error['status'])
+
+
+
+@api_view(['POST','GET'])
+def create_comment_view(request,user_id,complaint_id):
+
+    dict_response = {}
+
+    dict_error = {
+        'value':False,
+        'status':status.HTTP_200_OK,
+        'description':"No error"
+    }
+
+    valid_user = False
+
     parameter_complaint_id = complaint_id
-    parameter_requesting_user_id = requesting_user_id
+    parameter_user_account_id = user_id
+    object_complaint = accountsmodels.Complaint.objects.filter(pk=parameter_complaint_id)
+    object_user_account = accountsmodels.UserAccount.objects.filter(pk=parameter_requesting_user_id)
 
-    object_complaint = accountsmodels.ComplaintPost.objects.filter(pk=parameter_complaint_id)
-    object_requesting_user_account = accountsmodels.UserAccount.objects.filter(pk=parameter_requesting_user_id)
 
+    if object_complaint and object_user_account:
 
-    if object_complaint and object_requesting_user_account:
 
         object_complaint = object_complaint[0]
-        object_requesting_user_account = object_requesting_user_account[0]
+        object_user_account = object_user_account[0]
 
 
         #COMPLAINT INFO
@@ -710,56 +782,102 @@ def create_comment_view(request,complaint_id,requesting_user_id):
         }
 
 
-        object_author_user_account = object_complaint.author
-        object_company_user_account = object_complaint.company
+        #AUTHOR INFO
+
+        object_user_account_author = object_complaint.author
 
 
-        #check if requesting user is either complaint author or comapny
-        if object_requesting_user_account == object_author_user_account or object_requesting_user_account == object_company_user_account:
+        if object_user_account_author.user_type == dict_user_types['customer']:
 
+            object_profile_author = accountsmodels.Customer.objects.get(user_account=object_user_account_author)
+            name_author = object_profile_author.full_name
+            image_author = object_profile_author.profile_image.url
+
+        else:
+
+            object_profile_author = accountsmodels.Company.objects.get(user_account=object_user_account_author)
+            name_author = object_profile_author.name
+            image_author = object_profile_author.logo.url
+
+
+        dict_author = {
+            "id":object_user_account_author.pk,
+            "name":name_author,
+            "image":image_author
+        }
+
+
+        #COMPANY INFO
+
+        object_user_account_company = object_complaint.company
+        object_company = accountsmodels.Company.objects.get(user_account=object_company_user_account)
+
+        dict_company = {
+            "id":object_user_account_company.pk,
+            "name":object_company.name,
+            "logo":object_company.logo.url
+        }
+
+
+        #CHECK IF REQUESTING USER IS AUTHOR/COMPANY OF THE COMPLAINT
+
+        if object_user_account == object_user_account_author or object_user_account == object_company_user_account:
 
             #check if complaint is open
             if dict_complaint['is_active'] == True:
 
-                if request.method == 'POST':
+                if request.method == 'GET' or request.method == 'POST':
+
+                    if request.method == 'GET':
+
+                        dict_response['message'] = "Create Comment"
+                        dict_response['dict_complaint'] = dict_complaint
+                        dict_response['dict_author'] = dict_author
+                        dict_response['dict_company'] = dict_company
+
+                    else:
+
+                        request_data = request.data
 
 
-                    request_data = request.data
+                        #DESERIALIZATION AND FORM VALIDATION
 
+                        deserializer_comment = complaintsserializers.CreateCommentSerializer(data=request_data)
 
-                    #DESERIALIZATION AND FORM VALIDATION
+                        if deserializer_comment.is_valid():
 
-                    deserializer_comment = complaintsserializers.CreateCommentSerializer(data=request_data)
+                            deserialized_comment = deserializer_comment.validated_data
+                            form_comment = complaintsserializers.CreateCommentSerializer(deserialized_comment)
 
-                    if deserializer_comment.is_valid():
+                            if form_comment.is_valid():
 
-                        deserialized_comment = deserializer_comment.validated_data
-                        form_comment = complaintsserializers.CreateCommentSerializer(deserialized_comment)
+                                body_comment = form_comment.cleaned_data.get('body')
 
-                        if form_comment.is_valid():
+                                instance_comment = complaintsmodels.ComplaintComment.objects.create(
+                                    author=object_user_account,
+                                    complaint=object_complaint,
+                                    body=body_comment
+                                )
 
-                            body_comment = form_comment.cleaned_data.get('body')
+                                instance_comment.save()
 
-                            instance_comment = complaintsmodels.ComplaintComment.objects.create(
-                                author=object_requesting_user_account,
-                                complaint_post=dict_complaint['id'],
-                                body=body_comment
-                            )
+                                dict_comment = {
+                                    'body':body_comment
+                                }
 
-                            instance_comment.save()
+                                dict_response['message'] = "Comment Created!"
+                                dict_response['dict_comment'] = dict_comment
 
-                            dict_response['message'] = "Comment Created!"
+                            else:
+                                dict_error['value'] = True
+                                dict_error['status'] = status.HTTP_400_BAD_REQUEST
+                                dict_error['description'] = "Invalid Request Parameters"
+
 
                         else:
                             dict_error['value'] = True
                             dict_error['status'] = status.HTTP_400_BAD_REQUEST
                             dict_error['description'] = "Invalid Request Parameters"
-
-
-                    else:
-                        dict_error['value'] = True
-                        dict_error['status'] = status.HTTP_400_BAD_REQUEST
-                        dict_error['description'] = "Invalid Request Parameters"
 
 
                 else:
@@ -774,7 +892,7 @@ def create_comment_view(request,complaint_id,requesting_user_id):
         else:
             dict_error['value'] = True
             dict_error['status'] = status.HTTP_400_BAD_REQUEST
-            dict_error['description'] = "Invalid Request Parameters"
+            dict_error['description'] = "Invalid User"
 
     else:
         dict_error['value'] = True
@@ -783,53 +901,3 @@ def create_comment_view(request,complaint_id,requesting_user_id):
     
     dict_response['dict_error'] = dict_error
     return Response(dict_response,status=dict_error['status'])
-
-def complaints_list_view(request):
-
-    context = {}
-    complaint_dicts_list = []
-    sorted_complaint_dicts = []
-
-    is_complaint = bool_states_no
-
-    if request.method == 'GET':
-
-        complaint_objects = complaintsmodels.ComplaintPost.objects.all()
-
-        #check if there are complaints
-        if complaint_objects:
-
-            is_complaint = bool_states_yes
-
-            for complaint_object in complaint_objects:
-
-                complaint_id = complaint_object.pk
-                complaint_title = complaint_object.title
-
-                complaint_dicts_list.append({'id':complaint_id,'title':complaint_title})
-
-            sorted_complaint_dicts = sorted(complaint_dicts_list, key=lambda x: x['title'], reverse=False)
-
-        else:
-
-            #No complaints
-            pass
-
-
-        #GET_DATA
-
-        complaint_dicts = {'is_complaint':is_complaint,'dicts':sorted_complaint_dicts}
-
-        defaults_dict = {'bool_states_dict':bool_states_dict}
-
-
-
-        context['GET_data'] ={
-            'complaint_dicts':complaint_dicts,
-            'defaults_dict':defaults_dict
-        }
-
-
-        return render(request, "complaints/complaints_list.html",context)
-    else:
-        return HttpResponse("INVALID REQUEST!")
