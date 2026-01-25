@@ -95,14 +95,7 @@ def create_complaint_view(request,user_id,company_id):
 
                         instance_complaint.save()
 
-                        dict_complaint = {
-                            'company':object_company['name'],
-                            'title':cleaned_form_complaint['title'],
-                            'body':cleaned_form_complaint['body']
-                        }
-
                         dict_response['message'] = "Complaint Created"
-                        dict_response['dict_complaint'] = dict_complaint
 
 
                     else:
@@ -293,6 +286,19 @@ def read_complaint_view(request,user_id,complaint_id):
             pass
 
 
+        #COMPLAINT INFO
+
+        dict_complaint = {
+            "complaint":object_complaint.pk,
+            "title":object_complaint.title,
+            "body":object_complaint.body,
+            "date_created":object_complaint.date_created,
+            "is_active":object_complaint.is_active,
+            "is_solved":object_complaint.is_solved,
+            "is_favourite":is_favourite,
+            "score_type":object_complaint.score_type
+        }
+
         if request.method == "GET":
 
             dict_response['message'] = "Read Complaint"
@@ -403,9 +409,11 @@ def update_complaint_view(request,user_id,complaint_id):
                     if request.method == 'GET':
 
                         dict_response['message'] = "Update Complaint"
-                        dict_response['dict_complaint'] = dict_complaint
-                        dict_response['dict_author'] = dict_author
-                        dict_response['dict_company'] = dict_company
+                        dict_response['complaint'] = {
+                            'complaint':dict_complaint,
+                            'author':dict_author,
+                            'company':dict_company
+                        }
 
                     else:
 
@@ -554,9 +562,11 @@ def close_complaint_view(request,user_id,complaint_id):
                     if request.method == 'GET':
 
                         dict_response['message'] = "Close Complaint"
-                        dict_response['dict_complaint'] = dict_complaint
-                        dict_response['dict_author'] = dict_author
-                        dict_response['dict_company'] = dict_company
+                        dict_response['complaint'] = {
+                            'complaint':dict_complaint,
+                            'author':dict_author,
+                            'company':dict_company
+                        }
 
 
                     else:
@@ -831,9 +841,11 @@ def create_comment_view(request,user_id,complaint_id):
                     if request.method == 'GET':
 
                         dict_response['message'] = "Create Comment"
-                        dict_response['dict_complaint'] = dict_complaint
-                        dict_response['dict_author'] = dict_author
-                        dict_response['dict_company'] = dict_company
+                        dict_response['complaint'] = {
+                            'complaint':dict_complaint,
+                            'author':dict_author,
+                            'company':dict_company
+                        }
 
                     else:
 

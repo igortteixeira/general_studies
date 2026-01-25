@@ -163,8 +163,6 @@ def create_user_view(request):
                         instance_object.save()
 
                         dict_response['message'] = "Account Created"
-                        dict_response['dict_user_account'] = cleaned_form_user_account
-                        dict_response['dict_profile'] = cleaned_form_profile
 
                     else:
                         dict_error['value'] = True
@@ -231,7 +229,6 @@ def read_profile_user_view(request,user_id):
                 object_profile = object_profile[0]
 
                 dict_profile = {
-                    'id':object_profile.pk,
                     'full_name':object_profile.full_name,
                     'profile_image':object_profile.profile_image.url
                 }
@@ -242,12 +239,16 @@ def read_profile_user_view(request,user_id):
                 object_profile = object_profile[0]
 
                 dict_profile = {
-                    'id':object_profile.pk,
                     'name':object_profile.name,
                     'description':object_profile.description,
                     'location':object_profile.location,
                     'phone_number':object_profile.phone_number,
                     'logo':object_profile.logo.url
+                }
+
+                dict_user = {
+                    'account':dict_user_account,
+                    'profile':dict_profile
                 }
 
         else:
@@ -264,10 +265,7 @@ def read_profile_user_view(request,user_id):
 
     if request.method == 'GET':
 
-        dict_response['dict_user'] = {
-            'account':dict_user_account,
-            'profile':dict_profile
-        }
+        dict_response['dict_user'] = dict_user
 
 
     #Invalid request
@@ -535,7 +533,7 @@ def list_favourite_user_view(request,user_id):
         if request.method == 'GET':
 
             dict_response['message'] = "User Favourite List"
-            dict_response['list_dict_favourite'] = list_dict_favourite
+            dict_response['favorites'] = list_dict_favourite
 
         else:
 
